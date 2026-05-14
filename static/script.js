@@ -1,0 +1,781 @@
+const C = {
+    primary: '#7C3AED',
+    primaryLight: '#C4B5FD',
+    info: '#06B6D4',
+    pink: '#EC4899',
+    orange: '#F59E0B',
+    green: '#10B981',
+    red: '#EF4444',
+    purple: '#8B5CF6',
+    gray: '#9CA3AF',
+};
+
+let view = 'portfolio';
+let currentBrand = null;
+let brandsMeta = [];
+let portfolioCache = null;
+let charts = {};
+
+Chart.defaults.font.family = "'Inter', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+Chart.defaults.color = '#6B7280';
+Chart.defaults.borderColor = '#E5E7EB';
+
+const colorFor = c => c === 'green' ? C.green : c === 'orange' ? C.orange : C.red;
+const destroy = k => { if (charts[k]) { charts[k].destroy(); delete charts[k]; } };
+const destroyAll = () => Object.keys(charts).forEach(destroy);
+
+/* ============ KPI 카드 렌더 (SPBT 스타일) ============ */
+function renderKpiRow(targetId, items) {
+    const row = document.getElementById(targetId);
+    row.innerHTML = items.map((it, i) => {
+        const hasFoot = it.footLeft || it.footRight;
+        return `
+        <div class="kpi-card ${it.tint ? 'kpi-tint-' + it.tint : ''} ${it.scrollTo ? 'kpi-card-clickable' : ''}" ${it.scrollTo ? `data-scroll-to="${it.scrollTo}"` : ''}>
+            <div class="kpi-head">
+                <div class="kpi-label">${it.label}</div>
+            </div>
+            <div class="kpi-value ${it.valueColor || ''}">${it.value}</div>
+            ${hasFoot ? `
+                <div class="kpi-foot">
+                    <span>${it.footLeft || ''}</span>
+                    <span class="right">${it.footRight || ''}</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    }).join('');
+
+    // 스크롤 가능 카드에 클릭 이벤트
+    row.querySelectorAll('.kpi-card-clickable').forEach(el => {
+        el.addEventListener('click', () => {
+            const target = document.getElementById(el.dataset.scrollTo);
+            if (!target) return;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            target.classList.add('flash-highlight');
+            setTimeout(() => target.classList.remove('flash-highlight'), 1600);
+        });
+    });
+}
+
+/* ============ 상단 카운트 탭 ============ */
+function renderToptabs(brands) {
+    const goodCount = brands.filter(b => b.kpi_color === 'green').length;
+    const warnCount = brands.filter(b => b.kpi_color === 'orange').length;
+    const badCount  = brands.filter(b => b.kpi_color === 'red').length;
+    const tabs = [
+        { key: 'all',  label: '전체',     count: brands.length },
+        { key: 'good', label: '양호',     count: goodCount, cls: 'green' },
+        { key: 'warn', label: '주의',     count: warnCount, cls: 'orange' },
+        { key: 'bad',  label: '경고',     count: badCount,  cls: 'red' },
+    ];
+    const el = document.getElementById('toptabs');
+    el.innerHTML = tabs.map((t, i) => `
+        <button class="toptab ${i === 0 ? 'active' : ''}" data-filter="${t.key}">
+            ${t.label}
+            <span class="toptab-count">${t.count}</span>
+        </button>
+    `).join('');
+    el.querySelectorAll('.toptab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            el.querySelectorAll('.toptab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterBrandCards(btn.dataset.filter);
+        });
+    });
+}
+
+function filterBrandCards(filter) {
+    if (!portfolioCache) return;
+    let filtered = portfolioCache.brands;
+    if (filter === 'good') filtered = filtered.filter(b => b.kpi_color === 'green');
+    else if (filter === 'warn') filtered = filtered.filter(b => b.kpi_color === 'orange');
+    else if (filter === 'bad') filtered = filtered.filter(b => b.kpi_color === 'red');
+    renderBrandCards(filtered);
+}
+
+/* ============ Sidebar ============ */
+async function loadSidebar() {
+    const res = await fetch('/api/portfolio');
+    const d = await res.json();
+    brandsMeta = d.brands;
+    portfolioCache = d;
+    const list = document.getElementById('brandList');
+    list.innerHTML = brandsMeta.map(b => `
+        <li class="brand-item" data-id="${b.code}">
+            <span class="dot" style="background:${b.accent}"></span>${b.name}
+            <span class="manager">${b.store_total}개</span>
+        </li>
+    `).join('');
+
+    list.addEventListener('click', e => {
+        const item = e.target.closest('.brand-item');
+        if (!item) return;
+        setView('brand', item.dataset.id);
+    });
+    document.querySelectorAll('.view-item').forEach(el => {
+        el.addEventListener('click', () => setView('portfolio'));
+    });
+    return d;
+}
+
+/* ============ View switching ============ */
+function setView(newView, code = null) {
+    view = newView;
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.view-panel[data-view="${newView}"]`).classList.add('active');
+    document.querySelectorAll('.brand-item, .view-item').forEach(el => el.classList.remove('active'));
+    destroyAll();
+
+    if (newView === 'portfolio') {
+        document.querySelector('.view-item[data-view="portfolio"]').classList.add('active');
+        document.getElementById('logoMark').textContent = 'S';
+        document.getElementById('logoMark').style.background = 'linear-gradient(135deg, #8B5CF6, #6366F1)';
+        document.getElementById('topTitle').textContent = 'SPBT 운영 관리';
+        document.getElementById('topSub').textContent = 'Multi-Brand Operations · 멀티 브랜드 대시보드';
+        document.getElementById('scopeValue').textContent = '전체 보기';
+        document.getElementById('scopeSub').textContent = `${brandsMeta.length}개 브랜드 · 기준월 26.04`;
+        loadPortfolio();
+    } else {
+        currentBrand = code;
+        const meta = brandsMeta.find(b => b.code === code);
+        document.querySelector(`.brand-item[data-id="${code}"]`).classList.add('active');
+        document.getElementById('logoMark').textContent = meta.name.charAt(0);
+        document.getElementById('logoMark').style.background = meta.accent;
+        document.getElementById('topTitle').textContent = meta.name;
+        document.getElementById('topSub').textContent = meta.category + ' · 대표 ' + meta.ceo;
+        loadBrand(code);
+    }
+}
+
+/* ============ Portfolio view ============ */
+async function loadPortfolio(data) {
+    const d = data || portfolioCache || await (await fetch('/api/portfolio')).json();
+    portfolioCache = d;
+    const m = d.main_kpi;
+
+    const avgColor = m.avg_kpi_color === 'green' ? 'green' : m.avg_kpi_color === 'orange' ? 'orange' : 'red';
+    const avgTag = m.avg_kpi_color === 'green' ? '양호' : m.avg_kpi_color === 'orange' ? '주의' : '경고';
+
+    renderKpiRow('kpiRow', [
+        {
+            label: 'KPI 달성 현황',
+            tint: avgColor,
+            value: `${m.avg_kpi}<span class="unit">%</span>`,
+            valueColor: avgColor,
+            footLeft: '',
+            footRight: '',
+            scrollTo: 'kpiChartCard',
+        },
+        {
+            label: '운영 / 오픈예정 가맹점',
+            tint: 'purple',
+            value: `<span class="kpi-value-split">${m.total_stores}<span class="split-sub">/ +${m.total_opening}</span></span>`,
+            footLeft: '',
+            footRight: '',
+        },
+        {
+            label: '해결대기 이슈',
+            tint: m.total_issues > 0 ? 'red' : 'green',
+            value: `${m.total_issues}<span class="unit">건</span>`,
+            valueColor: m.total_issues > 0 ? 'red' : '',
+            footLeft: '',
+            footRight: '',
+        },
+    ]);
+
+    renderBrandCards(d.brands);
+
+    // ⓪ 가맹점 월 평균 매출 (전전월 vs 전월)
+    const fr = d.chart_franchise_avg_rev;
+    document.getElementById('franchiseRevSub').textContent =
+        `기준 ${fr.prev_month} · 전월 대비 · 단위 만원`;
+    destroy('franchiseRev');
+    charts.franchiseRev = new Chart(document.getElementById('franchiseRevChart'), {
+        type: 'bar',
+        data: {
+            labels: fr.items.map(b => b.name),
+            datasets: [
+                {
+                    label: `전전월 (${fr.prev_prev_month})`,
+                    data: fr.items.map(b => Math.round(b.prev_prev / 1e4)),
+                    backgroundColor: '#D1D5DB',
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    barPercentage: 0.78,
+                    categoryPercentage: 0.78,
+                },
+                {
+                    label: `전월 (${fr.prev_month})`,
+                    data: fr.items.map(b => Math.round(b.prev / 1e4)),
+                    backgroundColor: fr.items.map(b => b.prev < b.prev_prev ? '#EF4444' : b.accent),
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    barPercentage: 0.78,
+                    categoryPercentage: 0.78,
+                },
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const b = fr.items[ctx.dataIndex];
+                            const pct = b.prev_prev ? ((b.prev - b.prev_prev) / b.prev_prev * 100) : 0;
+                            const sign = pct >= 0 ? '+' : '';
+                            const base = ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '만원';
+                            if (ctx.datasetIndex === 1) return base + `  (${sign}${pct.toFixed(1)}%)`;
+                            return base;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { callback: v => v.toLocaleString() + '만' } },
+            },
+            layout: { padding: { top: 28 } },
+        },
+        plugins: [{
+            id: 'changeBadge',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                const meta1 = chart.getDatasetMeta(1);  // 전월 막대
+                meta1.data.forEach((bar, i) => {
+                    const b = fr.items[i];
+                    if (!b.prev_prev) return;
+                    const pct = (b.prev - b.prev_prev) / b.prev_prev * 100;
+                    const sign = pct >= 0 ? '+' : '';
+                    ctx.save();
+                    // 값 라벨
+                    ctx.font = '600 12px Inter, sans-serif';
+                    ctx.fillStyle = '#111827';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(Math.round(b.prev / 1e4).toLocaleString() + '만', bar.x, bar.y - 22);
+                    // 변화율 라벨
+                    ctx.font = '600 11px Inter, sans-serif';
+                    ctx.fillStyle = pct >= 0 ? '#10B981' : '#EF4444';
+                    ctx.fillText(`${sign}${pct.toFixed(1)}%`, bar.x, bar.y - 7);
+                    ctx.restore();
+                });
+            },
+        }],
+    });
+
+    // ① 브랜드별 KPI 달성률
+    destroy('kpi');
+    charts.kpi = new Chart(document.getElementById('kpiChart'), {
+        type: 'bar',
+        data: {
+            labels: d.chart_kpi.map(b => b.name),
+            datasets: [{
+                label: 'KPI 달성률 (%)',
+                data: d.chart_kpi.map(b => b.kpi),
+                backgroundColor: d.chart_kpi.map(b => colorFor(b.color)),
+                borderRadius: 6, borderSkipped: false,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, max: 100, grid: { color: '#F3F4F6' }, ticks: { callback: v => v + '%' } },
+            },
+        },
+    });
+
+    // ② 브랜드별 가맹점 현황 (스택)
+    destroy('pipe');
+    charts.pipe = new Chart(document.getElementById('pipelineChart'), {
+        type: 'bar',
+        data: {
+            labels: d.chart_pipeline.map(b => b.name),
+            datasets: [
+                { label: '오픈완료', data: d.chart_pipeline.map(b => b.opened),  backgroundColor: C.green,  borderRadius: 5, borderSkipped: false, stack: 'p' },
+                { label: '오픈예정', data: d.chart_pipeline.map(b => b.opening), backgroundColor: C.orange, borderRadius: 5, borderSkipped: false, stack: 'p' },
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', align: 'end', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, padding: 10 } } },
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: '#F3F4F6' } } },
+        },
+    });
+
+    renderIssueStats('issuesStats', m.total_projects, m.total_issues);
+    renderIssuesTable('issuesTable', d.issues, true);
+}
+
+function renderBrandCards(brands) {
+    const grid = document.getElementById('brandCardGrid');
+    grid.innerHTML = '';
+    brands.forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'brand-card';
+        div.style.setProperty('--accent', b.accent);
+        div.innerHTML = `
+            <div class="brand-card-head">
+                <div>
+                    <div class="brand-card-title">${b.name}</div>
+                    <div class="brand-card-mgr">대표 · ${b.ceo}</div>
+                </div>
+            </div>
+            <div class="brand-card-stats">
+                <div><div class="brand-stat-label">운영중</div><div class="brand-stat-value">${b.store_total}개</div></div>
+                <div><div class="brand-stat-label">오픈 예정</div><div class="brand-stat-value">${b.opening_count}개</div></div>
+                <div><div class="brand-stat-label">진행 프로젝트</div><div class="brand-stat-value">${b.projects_count}건</div></div>
+                <div><div class="brand-stat-label">해결대기 이슈</div><div class="brand-stat-value" style="color:${b.issues_count > 0 ? 'var(--danger)' : 'var(--text)'}">${b.issues_count}건</div></div>
+            </div>
+            <div class="brand-card-foot">
+                <span class="brand-card-cta">상세 보기 →</span>
+            </div>
+        `;
+        div.addEventListener('click', () => setView('brand', b.code));
+        grid.appendChild(div);
+    });
+}
+
+function renderIssueStats(elemId, projectCount, issueCount) {
+    const el = document.getElementById(elemId);
+    if (!el) return;
+    const issueCls = issueCount === 0 ? 'ok' : issueCount >= 3 ? 'high' : 'mid';
+    el.innerHTML = `
+        <div class="issues-stat">진행중 프로젝트<span class="issues-stat-value">${projectCount}건</span></div>
+        <div class="issues-stat">해결대기 이슈<span class="issues-stat-value ${issueCls}">${issueCount}건</span></div>
+    `;
+}
+
+function renderIssuesTable(elemId, issues, includeBrand) {
+    let html = '<thead><tr>';
+    html += '<th>안건명</th>';
+    if (includeBrand) html += '<th>브랜드</th>';
+    html += '<th>우선순위</th><th>상태</th>';
+    html += '</tr></thead><tbody>';
+    if (!issues.length) {
+        html += `<tr><td colspan="${includeBrand ? 4 : 3}" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 안건이 없습니다.</td></tr>`;
+    } else {
+        issues.forEach(i => {
+            html += '<tr>';
+            html += `<td><b>${i.title}</b></td>`;
+            if (includeBrand) html += `<td><span class="brand-tag" style="--accent:${i.accent}">${i.brand}</span></td>`;
+            html += `<td><span class="badge badge-priority-${i.priority}">${i.priority}</span></td>`;
+            html += `<td><span class="badge badge-status-${i.status}">${i.status}</span></td>`;
+            html += '</tr>';
+        });
+    }
+    html += '</tbody>';
+    document.getElementById(elemId).innerHTML = html;
+}
+
+/* ============ Brand detail view ============ */
+async function loadBrand(code) {
+    const res = await fetch('/api/brand/' + code);
+    const d = await res.json();
+    const m = d.main_kpi;
+
+    document.getElementById('scopeValue').textContent = d.name;
+    document.getElementById('scopeSub').textContent = `대표 ${d.ceo} · 기준월 26.04`;
+
+    const kpiColor = m.kpi_color;
+    const kpiTag = kpiColor === 'green' ? '양호' : kpiColor === 'orange' ? '주의' : '경고';
+
+    renderKpiRow('brandKpiRow', [
+        {
+            label: 'KPI 달성률',
+            tint: kpiColor,
+            value: `${m.kpi}<span class="unit">%</span>`,
+            valueColor: kpiColor,
+            footLeft: '',
+            footRight: '',
+        },
+        {
+            label: '운영 / 오픈예정 가맹점',
+            tint: 'purple',
+            value: `<span class="kpi-value-split">${m.store_total}<span class="split-sub">/ +${m.opening_count}</span></span>`,
+            footLeft: '',
+            footRight: '',
+        },
+        {
+            label: '해결대기 이슈',
+            tint: m.issues_count > 0 ? 'red' : 'green',
+            value: `${m.issues_count}<span class="unit">건</span>`,
+            valueColor: m.issues_count > 0 ? 'red' : '',
+            footLeft: '',
+            footRight: '',
+        },
+    ]);
+
+    destroy('btrend');
+    charts.btrend = new Chart(document.getElementById('brandTrendChart'), {
+        type: 'line',
+        data: {
+            labels: d.month_labels,
+            datasets: [{
+                label: 'KPI 달성률',
+                data: d.kpi_trend,
+                borderColor: d.accent,
+                backgroundColor: d.accent + '22',
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointRadius: 5,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: d.accent,
+                pointBorderWidth: 2,
+                fill: true,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: false, suggestedMin: 50, suggestedMax: 100, grid: { color: '#F3F4F6' }, ticks: { callback: v => v + '%' } } },
+        },
+    });
+
+    destroy('bpipe');
+    const pipeOrder = ['상담중', '계약완료', '오픈예정', '오픈완료'];
+    const pipeColors = [C.primary, C.purple, C.orange, C.green];
+    charts.bpipe = new Chart(document.getElementById('brandPipelineChart'), {
+        type: 'bar',
+        data: {
+            labels: pipeOrder,
+            datasets: [{
+                label: '건수',
+                data: pipeOrder.map(k => d.pipeline[k]),
+                backgroundColor: pipeColors,
+                borderRadius: 6, borderSkipped: false,
+                hoverBackgroundColor: pipeColors.map(c => c),
+            }],
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            onHover: (e, els) => { e.native.target.style.cursor = els[0] ? 'pointer' : 'default'; },
+            onClick: (e, els) => {
+                if (!els.length) return;
+                const stage = pipeOrder[els[0].index];
+                openPipelineDetail(d, stage, pipeColors[els[0].index]);
+            },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '건 · 클릭하면 상세 보기' } } },
+            scales: { x: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { stepSize: 5 } }, y: { grid: { display: false } } },
+        },
+    });
+
+    // 초기 펼침 닫기
+    document.getElementById('pipelineDetail').classList.remove('open');
+
+    // 매장별 전월 매출 비교 (전전월 대비)
+    renderStoresMonthly(d);
+
+    // 월 마케팅 진행 현황
+    renderMarketing(d);
+
+    const activeProjects = d.projects.filter(p => p.status !== '완료');
+    renderIssueStats('brandProjectStats', activeProjects.length, m.issues_count);
+
+    let ph = '<thead><tr><th>프로젝트명</th><th>진행률</th><th>예정 완료일</th><th>상태</th></tr></thead><tbody>';
+    if (!d.projects.length) {
+        ph += '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 프로젝트가 없습니다.</td></tr>';
+    } else {
+        [...d.projects].sort((a,b) => b.progress - a.progress).forEach(p => {
+            const low = p.progress < 50;
+            ph += `<tr>
+                <td><b>${p.name}</b></td>
+                <td class="progress-cell">
+                    <div class="progress-bar"><div class="progress-bar-fill ${low ? 'low' : ''}" style="width:${p.progress}%"></div></div>
+                    <div class="progress-text">${p.progress}%</div>
+                </td>
+                <td>${p.due}</td>
+                <td><span class="badge badge-status-${p.status}">${p.status}</span></td>
+            </tr>`;
+        });
+    }
+    ph += '</tbody>';
+    document.getElementById('projectsTable').innerHTML = ph;
+
+    renderIssueStats('brandIssueStats', activeProjects.length, m.issues_count);
+    renderIssuesTable('brandIssuesTable', d.issues, false);
+}
+
+function renderStoresMonthly(d) {
+    const stores = d.stores_monthly || [];
+    const meta = d.stores_monthly_meta || {};
+    const wrap = document.querySelector('.stores-monthly-wrap');
+
+    // 차트 높이를 매장 수에 비례하게 (매장당 36px + 헤더/패딩 80px)
+    const heightPx = Math.max(220, stores.length * 36 + 80);
+    wrap.style.height = heightPx + 'px';
+
+    // 매출 하락한 매장 수 카운트 (헤더 우측 통계)
+    const declined = stores.filter(s => s.prev < s.prev_prev).length;
+    const grown = stores.filter(s => s.prev > s.prev_prev).length;
+    document.getElementById('storesMonthlySub').textContent =
+        `기준 ${meta.prev_month} · 전전월(${meta.prev_prev_month}) 대비 · 단위 만원`;
+
+    const statsEl = document.getElementById('storesMonthlyStats');
+    if (statsEl) {
+        const decCls = declined === 0 ? 'ok' : declined >= 3 ? 'high' : 'mid';
+        statsEl.innerHTML = `
+            <div class="issues-stat">상승<span class="issues-stat-value ok">${grown}개</span></div>
+            <div class="issues-stat">하락<span class="issues-stat-value ${decCls}">${declined}개</span></div>
+        `;
+    }
+
+    destroy('storesMonthly');
+    const accent = d.accent;
+    charts.storesMonthly = new Chart(document.getElementById('storesMonthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: stores.map(s => s.name),
+            datasets: [
+                {
+                    label: `전전월 (${meta.prev_prev_month})`,
+                    data: stores.map(s => Math.round(s.prev_prev / 1e4)),
+                    backgroundColor: '#D1D5DB',
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    barPercentage: 0.85,
+                    categoryPercentage: 0.78,
+                },
+                {
+                    label: `전월 (${meta.prev_month})`,
+                    data: stores.map(s => Math.round(s.prev / 1e4)),
+                    backgroundColor: stores.map(s => s.prev < s.prev_prev ? '#EF4444' : accent),
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    barPercentage: 0.85,
+                    categoryPercentage: 0.78,
+                },
+            ],
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        usePointStyle: true,
+                        padding: 12,
+                        font: { size: 12 },
+                        generateLabels: (chart) => {
+                            return [
+                                { text: `전전월 (${meta.prev_prev_month})`, fillStyle: '#D1D5DB', strokeStyle: '#D1D5DB', pointStyle: 'rect' },
+                                { text: `전월 (${meta.prev_month}) 상승`,    fillStyle: accent,    strokeStyle: accent,    pointStyle: 'rect' },
+                                { text: `전월 (${meta.prev_month}) 하락`,    fillStyle: '#EF4444', strokeStyle: '#EF4444', pointStyle: 'rect' },
+                            ];
+                        },
+                    },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const s = stores[ctx.dataIndex];
+                            const pct = s.prev_prev ? ((s.prev - s.prev_prev) / s.prev_prev * 100) : 0;
+                            const sign = pct >= 0 ? '+' : '';
+                            const base = ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '만원';
+                            if (ctx.datasetIndex === 1) return base + `  (${sign}${pct.toFixed(1)}%)`;
+                            return base;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: '#F3F4F6' },
+                    ticks: { callback: v => v.toLocaleString() + '만' },
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { size: 12, weight: 500 } },
+                },
+            },
+        },
+        plugins: [{
+            id: 'changeBadge',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                const meta1 = chart.getDatasetMeta(1);   // 전월 막대
+                meta1.data.forEach((bar, i) => {
+                    const s = stores[i];
+                    if (!s.prev_prev) return;
+                    const pct = (s.prev - s.prev_prev) / s.prev_prev * 100;
+                    const sign = pct >= 0 ? '+' : '';
+                    const txt = `${sign}${pct.toFixed(1)}%`;
+                    ctx.save();
+                    ctx.font = '600 11px Inter, sans-serif';
+                    ctx.fillStyle = pct >= 0 ? '#10B981' : '#EF4444';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(txt, bar.x + 6, bar.y);
+                    ctx.restore();
+                });
+            },
+        }],
+    });
+}
+
+/* ============ 가맹점 현황 단계별 상세 펼침 ============ */
+function openPipelineDetail(d, stage, accent) {
+    const wrap = document.getElementById('pipelineDetail');
+    const detail = d.pipeline_detail || {};
+    const total = d.pipeline[stage] || 0;
+
+    let bodyHtml = '';
+    if (stage === '오픈완료') {
+        // 오픈완료는 stores_monthly 데이터 활용
+        const stores = d.stores_monthly || [];
+        if (!stores.length) {
+            bodyHtml = '<div class="pipeline-detail-empty">표시할 매장이 없습니다.</div>';
+        } else {
+            bodyHtml = '<table class="issues-table"><thead><tr><th>매장명</th><th class="cell-num">전월 매출(만원)</th><th>변동</th></tr></thead><tbody>';
+            stores.forEach(s => {
+                const pct = s.prev_prev ? ((s.prev - s.prev_prev) / s.prev_prev * 100) : 0;
+                const sign = pct >= 0 ? '+' : '';
+                const cls = pct >= 0 ? 'ok' : 'high';
+                bodyHtml += `<tr>
+                    <td><b>${s.name}</b></td>
+                    <td class="cell-num">${Math.round(s.prev / 1e4).toLocaleString()}</td>
+                    <td><span class="issues-stat-value ${cls}">${sign}${pct.toFixed(1)}%</span></td>
+                </tr>`;
+            });
+            bodyHtml += '</tbody></table>';
+        }
+    } else {
+        const items = detail[stage] || [];
+        if (!items.length) {
+            bodyHtml = '<div class="pipeline-detail-empty">표시할 항목이 없습니다.</div>';
+        } else if (stage === '상담중') {
+            bodyHtml = '<table class="issues-table"><thead><tr><th>성함</th><th>희망 지역</th><th>예산</th><th>단계</th><th>유입일</th></tr></thead><tbody>';
+            items.forEach(i => {
+                bodyHtml += `<tr>
+                    <td><b>${i.name}</b></td>
+                    <td>${i.region}</td>
+                    <td>${i.budget}</td>
+                    <td>${i.stage}</td>
+                    <td>${i.due}</td>
+                </tr>`;
+            });
+            bodyHtml += '</tbody></table>';
+            const more = total - items.length;
+            if (more > 0) bodyHtml += `<div class="pipeline-detail-empty">전체 ${total}건 중 대표 ${items.length}건 · 외 ${more}건</div>`;
+        } else {
+            // 계약완료 / 오픈예정
+            bodyHtml = '<table class="issues-table"><thead><tr><th>매장명</th><th>지역</th><th>오픈 예정일</th><th>현재 단계</th></tr></thead><tbody>';
+            items.forEach(i => {
+                bodyHtml += `<tr>
+                    <td><b>${i.name}</b></td>
+                    <td>${i.region}</td>
+                    <td>${i.open_plan}</td>
+                    <td>${i.stage}</td>
+                </tr>`;
+            });
+            bodyHtml += '</tbody></table>';
+            const more = total - items.length;
+            if (more > 0) bodyHtml += `<div class="pipeline-detail-empty">전체 ${total}건 중 대표 ${items.length}건 · 외 ${more}건</div>`;
+        }
+    }
+
+    wrap.innerHTML = `
+        <div class="pipeline-detail-head">
+            <div class="pipeline-detail-title">
+                <span style="color:${accent}">●</span> ${stage} 상세
+                <span class="badge" style="background:${accent}22; color:${accent}">${total}건</span>
+            </div>
+            <button class="pipeline-detail-close" id="pipelineCloseBtn">✕ 닫기</button>
+        </div>
+        ${bodyHtml}
+    `;
+    wrap.classList.add('open');
+    document.getElementById('pipelineCloseBtn').addEventListener('click', () => {
+        wrap.classList.remove('open');
+    });
+}
+
+/* ============ 월 마케팅 진행 현황 ============ */
+function renderMarketing(d) {
+    const mk = d.marketing || { month: '', items: [] };
+    document.getElementById('marketingSub').textContent = `기준 ${mk.month} · 채널별 예산 대비 집행`;
+
+    const totalBudget = mk.items.reduce((s, x) => s + x.budget, 0);
+    const totalSpent = mk.items.reduce((s, x) => s + x.spent, 0);
+    const execRate = totalBudget > 0 ? (totalSpent / totalBudget * 100) : 0;
+    const statsEl = document.getElementById('marketingStats');
+    if (statsEl) {
+        statsEl.innerHTML = `
+            <div class="issues-stat">총 예산<span class="issues-stat-value">${totalBudget.toLocaleString()}만</span></div>
+            <div class="issues-stat">집행<span class="issues-stat-value">${totalSpent.toLocaleString()}만 (${execRate.toFixed(1)}%)</span></div>
+        `;
+    }
+
+    // 차트: 채널별 예산/집행 가로 그룹 막대
+    destroy('marketing');
+    charts.marketing = new Chart(document.getElementById('marketingChart'), {
+        type: 'bar',
+        data: {
+            labels: mk.items.map(x => x.channel),
+            datasets: [
+                { label: '예산', data: mk.items.map(x => x.budget), backgroundColor: '#E5E7EB', borderRadius: 4, borderSkipped: false, barPercentage: 0.85, categoryPercentage: 0.78 },
+                { label: '집행', data: mk.items.map(x => x.spent),  backgroundColor: d.accent,  borderRadius: 4, borderSkipped: false, barPercentage: 0.85, categoryPercentage: 0.78 },
+            ],
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, padding: 10, font: { size: 12 } } },
+                tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '만원' } },
+            },
+            scales: {
+                x: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { callback: v => v.toLocaleString() + '만' } },
+                y: { grid: { display: false }, ticks: { font: { size: 12 } } },
+            },
+        },
+    });
+
+    // 테이블: 채널 / 예산 / 집행률 / 성과
+    let html = '<thead><tr><th>채널</th><th class="col-num">예산</th><th>집행률</th><th>성과</th></tr></thead><tbody>';
+    mk.items.forEach(x => {
+        const rate = x.budget > 0 ? (x.spent / x.budget * 100) : 0;
+        const under = rate < 80;
+        html += `<tr>
+            <td><b>${x.channel}</b></td>
+            <td class="col-num">${x.budget.toLocaleString()}만</td>
+            <td class="exec-bar-cell">
+                <div class="exec-bar"><div class="exec-bar-fill ${under ? 'under' : ''}" style="width:${Math.min(rate, 100)}%; background:${under ? '' : d.accent};"></div></div>
+                <div class="exec-bar-text">${x.spent.toLocaleString()}만 (${rate.toFixed(0)}%)</div>
+            </td>
+            <td style="color:var(--text-soft); font-size:12px;">${x.metric}</td>
+        </tr>`;
+    });
+    html += '</tbody>';
+    document.getElementById('marketingTable').innerHTML = html;
+}
+
+/* ============ Init ============ */
+document.getElementById('btnRefresh')?.addEventListener('click', async () => {
+    portfolioCache = null;
+    if (view === 'portfolio') {
+        await loadSidebar();
+        loadPortfolio();
+    } else {
+        loadBrand(currentBrand);
+    }
+});
+
+(async function init() {
+    const portfolioData = await loadSidebar();
+    loadPortfolio(portfolioData);
+})();
