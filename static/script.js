@@ -385,7 +385,6 @@ function renderBrandCards(brands) {
             <div class="brand-card-head">
                 <div>
                     <div class="brand-card-title">${b.name}</div>
-                    <div class="brand-card-mgr">대표 · ${b.ceo}</div>
                 </div>
             </div>
             <div class="brand-card-stats">

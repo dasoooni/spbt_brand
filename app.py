@@ -1,3 +1,4 @@
+import random
 from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
@@ -5,6 +6,92 @@ app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 MONTH_LABELS = ["25.11", "25.12", "26.01", "26.02", "26.03", "26.04"]
+
+
+# 동래정 실제 영업중 매장 (2026-04-28 기준 58개) — 폐점 11개 제외
+DRJ_STORE_NAMES = [
+    # 직영 (3)
+    "선릉점", "본점", "신논현직영",
+    # 서울 가맹 대형/요지 (9)
+    "잠실새내점", "신풍역점", "화곡점", "목동점", "송파가락점", "충무로점",
+    "신도림점", "망원점", "아현점",
+    # 서울 가맹 일반 (11)
+    "노원역점", "길음점", "가재울뉴타운점", "가양역점", "까치산점", "대흥점",
+    "역촌점", "상봉점", "창동점", "장안점", "방이점",
+    # 경기/인천 (24)
+    "하남미사점", "파주운정점", "삼송점", "다산점", "일산식사점", "일산주엽점",
+    "일산화정점", "고양덕은점", "동탄역점", "양주옥정점", "의정부고산점", "안양비산점",
+    "풍무점", "김포걸포점", "김포구래점", "운양점", "신영통점", "부천옥길점",
+    "화성향남점", "수지점", "용인동백점", "산성역점", "다율점", "검단신도시점",
+    # 지방 (11)
+    "부산시청점", "정관점", "부산명지점", "용호빌리브점", "울산매곡점",
+    "대전시청점", "광주첨단신용점", "여수여서점", "순천신대점",
+    "김천점", "구미점",
+]
+
+DRJ_OPENING_STORES = [
+    {"name": "동래정 안성중앙대점",  "region": "경기 안성시 대덕면",         "open_plan": "26-05-08", "stage": "오픈 진행 중"},
+    {"name": "동래정 고덕점",        "region": "서울 강동구 고덕동",        "open_plan": "26-05-13", "stage": "오픈 D-7 (옥정점주 2호점)"},
+    {"name": "동래정 신정뉴타운점",   "region": "서울 양천구 신월동",        "open_plan": "26-05-13", "stage": "오픈 D-7"},
+    {"name": "동래정 청주가경점",    "region": "충북 청주시 흥덕구 가경동",  "open_plan": "26-05-13", "stage": "오픈 D-7"},
+    {"name": "동래정 광양중마점",    "region": "전남 광양시 중동",           "open_plan": "26-05-27", "stage": "디자인물 진행 (순천 2호점)"},
+    {"name": "동래정 철산점",       "region": "경기 광명시 철산동",        "open_plan": "26-07월",   "stage": "6/1 착공 예정"},
+    {"name": "동래정 수원화서점",   "region": "경기 수원시 팔달구",         "open_plan": "미정",     "stage": "실측 진행 (신도림 점주 지인)"},
+]
+
+# 동래정 오픈 유력 매장 (가계약/협의 중) - 계약완료 단계에 표시
+DRJ_PROBABLE_STORES = [
+    {"name": "동래정 영종도점",    "region": "인천 중구 해맞이길",        "open_plan": "협의 중", "stage": "정보공개서 점주 확인 완료 (4/14)"},
+    {"name": "동래정 창원용호점",  "region": "경남 창원시 성산구 용호동", "open_plan": "협의 중", "stage": "건물주 협의 중 (실측 완료)"},
+    {"name": "동래정 고척동점",   "region": "서울 구로구 중앙로14길",    "open_plan": "협의 중", "stage": "후보 자리 탐색 (윤재승 이사)"},
+    {"name": "동래정 부천점",     "region": "인천 부평구 마장로",        "open_plan": "협의 중", "stage": "한화프라자 117호 검토"},
+]
+
+
+def _gen_drj_stores():
+    """동래정 58개 매장의 전전월/전월 매출 mock 생성 (seed 고정으로 재실행해도 동일)"""
+    rng = random.Random(2604)
+    # 직영 3개는 개별 매출 범위 (선릉 > 본점 > 신논현)
+    directs = {
+        "선릉점":      (98_000_000, 105_000_000),
+        "본점":        (88_000_000, 95_000_000),
+        "신논현직영":  (80_000_000, 88_000_000),
+    }
+    # 인덱스 범위:
+    #   0~2   직영 3
+    #   3~11  서울 대형 가맹 9
+    #   12~22 서울 일반 가맹 11
+    #   23~46 경기/인천 24
+    #   47~57 지방 11
+    stores = []
+    for i, name in enumerate(DRJ_STORE_NAMES):
+        if name in directs:
+            lo, hi = directs[name]
+            prev = rng.randint(lo, hi)
+        elif i < 12:                       # 서울 대형 가맹 (잠실·신풍·화곡 등)
+            prev = rng.randint(55_000_000, 78_000_000)
+        elif i < 23:                       # 서울 일반 가맹
+            prev = rng.randint(34_000_000, 55_000_000)
+        elif i < 47:                       # 경기/인천
+            prev = rng.randint(28_000_000, 52_000_000)
+        else:                              # 지방
+            prev = rng.randint(22_000_000, 45_000_000)
+        # 전월 대비 변화율: 대부분 ±5% 안정, 가끔 더 큰 변동
+        pct = rng.choices([
+            rng.uniform(-2, 4),    # 안정
+            rng.uniform(3, 8),     # 성장
+            rng.uniform(-8, -3),   # 부진
+        ], weights=[60, 25, 15])[0]
+        prev_prev = int(prev / (1 + pct / 100))
+        stores.append({"name": name, "prev_prev": prev_prev, "prev": prev})
+    # 매출 큰 순으로 정렬
+    stores.sort(key=lambda s: s["prev"], reverse=True)
+    return stores
+
+
+DRJ_STORES_MONTHLY = _gen_drj_stores()
+DRJ_STORE_TOTAL = len(DRJ_STORES_MONTHLY)
+DRJ_FRANCHISE_AVG = sum(s["prev"] for s in DRJ_STORES_MONTHLY) // DRJ_STORE_TOTAL
 
 # 사이드바 표시 순서
 SIDEBAR_ORDER = ["DRJ", "YSK", "CYHU", "MJD", "PAD", "HMNBM"]
@@ -40,14 +127,13 @@ PIPELINE_DETAIL = {
             {"name": "김도현", "region": "대구 수성구", "budget": "3억",   "stage": "상권분석 의뢰",     "due": "26-05-03"},
             {"name": "이지은", "region": "고양 일산",   "budget": "1.8억", "stage": "2단계 대면 예정",   "due": "26-05-07"},
         ],
-        "계약완료": [
-            {"name": "윤상민점주", "region": "대구 수성구", "open_plan": "26-06-20", "stage": "임대차 완료"},
-            {"name": "장혁수점주", "region": "강남 신사",   "open_plan": "26-07-30", "stage": "인테리어 발주"},
+        "계약완료": DRJ_PROBABLE_STORES + [
+            {"name": "김명진점주",   "region": "서울 강북구",   "open_plan": "26-08-15", "stage": "상권분석 완료"},
+            {"name": "정수영점주",   "region": "용인 동탄2",    "open_plan": "26-08-30", "stage": "디자인물 진행"},
+            {"name": "박지영점주",   "region": "고양시 화정",   "open_plan": "26-09-10", "stage": "임대차 완료"},
+            {"name": "오상민점주",   "region": "서울 노원",     "open_plan": "26-09-25", "stage": "인테리어 발주"},
         ],
-        "오픈예정": [
-            {"name": "대구 수성점", "region": "대구 수성구", "open_plan": "26-06-20", "stage": "교육 진행 중"},
-            {"name": "강남 신사점", "region": "서울 강남구", "open_plan": "26-07-30", "stage": "디자인물 진행"},
-        ],
+        "오픈예정": DRJ_OPENING_STORES,
     },
     "MJD": {
         "상담중": [
@@ -235,20 +321,14 @@ BRANDS = [
         "ceo": "박병진, 양형석",
         "category": "한식 · 백탄직화",
         "accent": "#F59E0B",
-        "store_total": 7,
+        "store_total": DRJ_STORE_TOTAL,
         "kpi": 85,
         "kpi_trend": [80, 82, 83, 84, 85, 85],
-        "franchise_avg_rev": [58_000_000, 59_500_000, 60_800_000, 61_500_000, 61_800_000, 62_300_000],
-        "stores_monthly": [
-            {"name": "신논현점",      "prev_prev": 95_000_000, "prev": 98_400_000},
-            {"name": "판교점",        "prev_prev": 90_000_000, "prev": 92_300_000},
-            {"name": "선릉점",        "prev_prev": 80_000_000, "prev": 82_500_000},
-            {"name": "영등포점",      "prev_prev": 78_000_000, "prev": 75_200_000},
-            {"name": "종로점",        "prev_prev": 64_500_000, "prev": 64_800_000},
-            {"name": "일산킨텍스점",  "prev_prev": 60_500_000, "prev": 61_700_000},
-            {"name": "부산서면점",    "prev_prev": 48_000_000, "prev": 41_200_000},
-        ],
-        "pipeline": {"상담중": 25, "계약완료": 8, "오픈예정": 2, "오픈완료": 5},
+        # 매장 다수 보유, 매장당 평균은 안정 수준
+        "franchise_avg_rev": [44_500_000, 45_200_000, 45_800_000, 46_400_000, 46_700_000, DRJ_FRANCHISE_AVG],
+        "stores_monthly": DRJ_STORES_MONTHLY,
+        # 오픈완료 = 54, 오픈예정 = 6 (실제 사용자 데이터 반영)
+        "pipeline": {"상담중": 28, "계약완료": 12, "오픈예정": len(DRJ_OPENING_STORES), "오픈완료": DRJ_STORE_TOTAL},
         "projects": [
             {"name": "2세대 모델 정립 (객단가 상향)",  "owner": "이영재", "progress": 70, "due": "2026-07-15", "status": "진행중"},
             {"name": "해외진출 검토 (일본)",           "owner": "박상진", "progress": 35, "due": "2026-08-31", "status": "진행중"},
@@ -256,7 +336,8 @@ BRANDS = [
             {"name": "정보공개서 정기변경 (26.04.22)", "owner": "이영재", "progress": 100,"due": "2026-04-22", "status": "완료"},
         ],
         "issues": [
-            {"title": "부산서면점 매출 55% 달성 (오픈 2개월)", "priority": "높음", "status": "해결대기"},
+            {"title": "일산식사점·일산주엽점 매출 하락",     "priority": "중간", "status": "진행중"},
+            {"title": "부산명지·여수여서점 부진 추세",      "priority": "중간", "status": "해결대기"},
         ],
     },
     {
