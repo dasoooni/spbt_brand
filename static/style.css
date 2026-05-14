@@ -786,6 +786,13 @@ button { font-family: inherit; cursor: pointer; }
 .badge-status-완료     { background: var(--success-soft); color: var(--success-text); }
 .badge-status-해결대기 { background: var(--danger-soft); color: var(--danger-text); }
 
+/* 안건 구분 카테고리 뱃지 */
+.badge-category {
+    background: var(--border-soft);
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
 /* Progress bar */
 .progress-cell { min-width: 140px; }
 .progress-bar {

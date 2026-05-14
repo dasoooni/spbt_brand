@@ -345,8 +345,8 @@ BRANDS = [
             {"name": "인플루언서 30명 게재 캠페인",        "owner": "박지훈", "progress": 45,  "due": "2026-07-10", "status": "진행중"},
         ],
         "issues": [
-            {"title": "센텀점 매출 32% 달성 (오픈 후 부진)", "priority": "높음", "status": "해결대기"},
-            {"title": "광교법조점 매출 54% 달성",           "priority": "중간", "status": "진행중"},
+            {"title": "센텀점 매출 32% 달성 (오픈 후 부진)", "category": "가맹점", "due_date": "2026-06-30", "progress": 35,  "priority": "높음", "status": "해결대기"},
+            {"title": "광교법조점 매출 54% 달성",           "category": "가맹점", "due_date": "2026-07-15", "progress": 40,  "priority": "중간", "status": "진행중"},
         ],
     },
     {
@@ -378,10 +378,10 @@ BRANDS = [
             {"name": "정보공개서 정기변경 (26.04.22)",      "owner": "이영재", "progress": 100,"due": "2026-04-22", "status": "완료"},
         ],
         "issues": [
-            {"title": "원육(삼목·가브리살) 가격 폭등 대응",   "priority": "높음", "status": "진행중"},
-            {"title": "다산점 지속 컴플레인 (판매가 인상)",  "priority": "높음", "status": "해결대기"},
-            {"title": "산성점 지점 컴플레인",                "priority": "중간", "status": "진행중"},
-            {"title": "지방 매장 판매가 상이 (통일 필요)",   "priority": "중간", "status": "해결대기"},
+            {"title": "원육(삼목·가브리살) 가격 폭등 대응",   "category": "업무",   "due_date": "2026-06-30", "progress": 55, "priority": "높음", "status": "진행중"},
+            {"title": "다산점 지속 컴플레인 (판매가 인상)",  "category": "가맹점", "due_date": "2026-06-15", "progress": 25, "priority": "높음", "status": "해결대기"},
+            {"title": "산성점 지점 컴플레인",                "category": "가맹점", "due_date": "2026-06-20", "progress": 45, "priority": "중간", "status": "진행중"},
+            {"title": "지방 매장 판매가 상이 (통일 필요)",   "category": "업무",   "due_date": "2026-07-31", "progress": 35, "priority": "중간", "status": "해결대기"},
         ],
     },
     {
@@ -420,8 +420,8 @@ BRANDS = [
             {"name": "배곧점 오픈 준비 (BASE 6천만)",     "owner": "한도윤", "progress": 80, "due": "2026-06-10", "status": "진행중"},
         ],
         "issues": [
-            {"title": "일산식사점 매출 하락 추세",         "priority": "중간", "status": "진행중"},
-            {"title": "점주 불만 (가격 인상·인건비 이슈)", "priority": "중간", "status": "해결대기"},
+            {"title": "일산식사점 매출 하락 추세",         "category": "가맹점", "due_date": "2026-06-30", "progress": 40, "priority": "중간", "status": "진행중"},
+            {"title": "점주 불만 (가격 인상·인건비 이슈)", "category": "가맹점", "due_date": "2026-07-15", "progress": 30, "priority": "중간", "status": "해결대기"},
         ],
     },
     {
@@ -462,10 +462,10 @@ BRANDS = [
             {"name": "점주 교육 프로그램 v2 (8주)",          "owner": "이서연", "progress": 40, "due": "2026-07-30", "status": "진행중"},
         ],
         "issues": [
-            {"title": "구로디지털점 점주 정리 필요 (오래된 점주)", "priority": "높음", "status": "진행중"},
-            {"title": "노원점 양도양수 협의 중 (김포 이동)",      "priority": "중간", "status": "진행중"},
-            {"title": "오금점 업변 검토 (개인순대국밥)",          "priority": "중간", "status": "해결대기"},
-            {"title": "신림점 리모델링 진행 중",                 "priority": "낮음", "status": "진행중"},
+            {"title": "구로디지털점 점주 정리 필요 (오래된 점주)", "category": "가맹점", "due_date": "2026-07-31", "progress": 25, "priority": "높음", "status": "진행중"},
+            {"title": "노원점 양도양수 협의 중 (김포 이동)",      "category": "가맹점", "due_date": "2026-06-15", "progress": 55, "priority": "중간", "status": "진행중"},
+            {"title": "오금점 업변 검토 (개인순대국밥)",          "category": "확장",   "due_date": "2026-06-30", "progress": 30, "priority": "중간", "status": "해결대기"},
+            {"title": "신림점 리모델링 진행 중",                 "category": "가맹점", "due_date": "2026-06-15", "progress": 65, "priority": "낮음", "status": "진행중"},
         ],
     },
     {
@@ -504,8 +504,8 @@ BRANDS = [
             {"name": "브랜드 리뉴얼 검토 (요쇼쿠천국)",     "owner": "한도윤", "progress": 20, "due": "2026-08-30", "status": "진행중"},
         ],
         "issues": [
-            {"title": "내용증명 3건 답변 마감",           "priority": "높음", "status": "해결대기"},
-            {"title": "마곡·구월점 매출 부진 (40% 수준)", "priority": "높음", "status": "진행중"},
+            {"title": "내용증명 3건 답변 마감",           "category": "업무",   "due_date": "2026-05-25", "progress": 50, "priority": "높음", "status": "해결대기"},
+            {"title": "마곡·구월점 매출 부진 (40% 수준)", "category": "가맹점", "due_date": "2026-06-15", "progress": 30, "priority": "높음", "status": "진행중"},
         ],
     },
     {
@@ -541,8 +541,8 @@ BRANDS = [
             {"name": "유튜브 콘텐츠 시리즈 (주 1편)",       "owner": "박지훈", "progress": 50, "due": "2026-07-15", "status": "진행중"},
         ],
         "issues": [
-            {"title": "한민시장점 매출 57% 달성",          "priority": "높음", "status": "진행중"},
-            {"title": "대전송촌·강동명일점 66% 수준",      "priority": "중간", "status": "해결대기"},
+            {"title": "한민시장점 매출 57% 달성",          "category": "가맹점", "due_date": "2026-06-10", "progress": 45, "priority": "높음", "status": "진행중"},
+            {"title": "대전송촌·강동명일점 66% 수준",      "category": "가맹점", "due_date": "2026-06-20", "progress": 35, "priority": "중간", "status": "해결대기"},
         ],
     },
 ]
@@ -669,6 +669,9 @@ def api_portfolio():
                 "title": it["title"],
                 "brand": b["name"],
                 "accent": b["accent"],
+                "category": it.get("category", "기타"),
+                "due_date": it.get("due_date", "-"),
+                "progress": it.get("progress", 0),
                 "priority": it["priority"],
                 "status": it["status"],
             })

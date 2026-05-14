@@ -89,15 +89,22 @@ function buildIssuesTableHtml(issues, includeBrand) {
     if (!issues.length) {
         return '<div class="modal-empty">등록된 안건이 없습니다.</div>';
     }
-    let html = '<table class="issues-table"><thead><tr><th>안건명</th>';
+    let html = '<table class="issues-table"><thead><tr>';
     if (includeBrand) html += '<th>브랜드</th>';
-    html += '<th>우선순위</th><th>상태</th></tr></thead><tbody>';
+    html += '<th>구분</th><th>내용</th><th>완료 예정일</th><th>진행률</th>';
+    html += '</tr></thead><tbody>';
     issues.forEach(i => {
+        const progress = i.progress || 0;
+        const low = progress < 50;
         html += '<tr>';
-        html += `<td><b>${i.title}</b></td>`;
         if (includeBrand) html += `<td><span class="brand-tag" style="--accent:${i.accent}">${i.brand}</span></td>`;
-        html += `<td><span class="badge badge-priority-${i.priority}">${i.priority}</span></td>`;
-        html += `<td><span class="badge badge-status-${i.status}">${i.status}</span></td>`;
+        html += `<td><span class="badge badge-category">${i.category || '-'}</span></td>`;
+        html += `<td><b>${i.title}</b></td>`;
+        html += `<td>${i.due_date || '-'}</td>`;
+        html += `<td class="progress-cell">
+            <div class="progress-bar"><div class="progress-bar-fill ${low ? 'low' : ''}" style="width:${progress}%"></div></div>
+            <div class="progress-text">${progress}%</div>
+        </td>`;
         html += '</tr>';
     });
     html += '</tbody></table>';
@@ -460,19 +467,25 @@ function renderIssueStats(elemId, projectCount, issueCount) {
 
 function renderIssuesTable(elemId, issues, includeBrand) {
     let html = '<thead><tr>';
-    html += '<th>안건명</th>';
     if (includeBrand) html += '<th>브랜드</th>';
-    html += '<th>우선순위</th><th>상태</th>';
+    html += '<th>구분</th><th>내용</th><th>완료 예정일</th><th>진행률</th>';
     html += '</tr></thead><tbody>';
+    const colCount = includeBrand ? 5 : 4;
     if (!issues.length) {
-        html += `<tr><td colspan="${includeBrand ? 4 : 3}" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 안건이 없습니다.</td></tr>`;
+        html += `<tr><td colspan="${colCount}" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 안건이 없습니다.</td></tr>`;
     } else {
         issues.forEach(i => {
+            const progress = i.progress || 0;
+            const low = progress < 50;
             html += '<tr>';
-            html += `<td><b>${i.title}</b></td>`;
             if (includeBrand) html += `<td><span class="brand-tag" style="--accent:${i.accent}">${i.brand}</span></td>`;
-            html += `<td><span class="badge badge-priority-${i.priority}">${i.priority}</span></td>`;
-            html += `<td><span class="badge badge-status-${i.status}">${i.status}</span></td>`;
+            html += `<td><span class="badge badge-category">${i.category || '-'}</span></td>`;
+            html += `<td><b>${i.title}</b></td>`;
+            html += `<td>${i.due_date || '-'}</td>`;
+            html += `<td class="progress-cell">
+                <div class="progress-bar"><div class="progress-bar-fill ${low ? 'low' : ''}" style="width:${progress}%"></div></div>
+                <div class="progress-text">${progress}%</div>
+            </td>`;
             html += '</tr>';
         });
     }
