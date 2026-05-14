@@ -522,9 +522,27 @@ async function loadBrand(code) {
             onClick: (e, els) => {
                 if (!els.length) return;
                 const stage = pipeOrder[els[0].index];
+                // 외부 대시보드 링크가 설정된 단계는 새 탭으로 이동, 아니면 카드 내부에 상세 펼침
+                const pipelineLinks = (d.external_links && d.external_links.pipeline) || {};
+                if (pipelineLinks[stage]) {
+                    window.open(pipelineLinks[stage], '_blank', 'noopener');
+                    return;
+                }
                 openPipelineDetail(d, stage, pipeColors[els[0].index]);
             },
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '건 · 클릭하면 상세 보기' } } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const stage = pipeOrder[ctx.dataIndex];
+                            const pipelineLinks = (d.external_links && d.external_links.pipeline) || {};
+                            const suffix = pipelineLinks[stage] ? '건 · 클릭하면 외부 대시보드 열림 ↗' : '건 · 클릭하면 상세 보기';
+                            return ctx.parsed.x + suffix;
+                        },
+                    },
+                },
+            },
             scales: { x: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { stepSize: 5 } }, y: { grid: { display: false } } },
         },
     });

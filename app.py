@@ -36,7 +36,7 @@ DRJ_OPENING_STORES = [
     {"name": "동래정 청주가경점",    "region": "충북 청주시 흥덕구 가경동",  "open_plan": "26-05-13", "stage": "오픈 D-7"},
     {"name": "동래정 광양중마점",    "region": "전남 광양시 중동",           "open_plan": "26-05-27", "stage": "디자인물 진행 (순천 2호점)"},
     {"name": "동래정 철산점",       "region": "경기 광명시 철산동",        "open_plan": "26-07월",   "stage": "6/1 착공 예정"},
-    {"name": "동래정 수원화서점",   "region": "경기 수원시 팔달구",         "open_plan": "미정",     "stage": "실측 진행 (신도림 점주 지인)"},
+    {"name": "동래정 수원화서점",   "region": "경기 수원시 팔달구",         "open_plan": "26-06-17", "stage": "오픈 준비 (신도림 점주 지인)"},
 ]
 
 # 동래정 오픈 유력 매장 (가계약/협의 중) - 계약완료 단계에 표시
@@ -44,7 +44,7 @@ DRJ_PROBABLE_STORES = [
     {"name": "동래정 영종도점",    "region": "인천 중구 해맞이길",        "open_plan": "협의 중", "stage": "정보공개서 점주 확인 완료 (4/14)"},
     {"name": "동래정 창원용호점",  "region": "경남 창원시 성산구 용호동", "open_plan": "협의 중", "stage": "건물주 협의 중 (실측 완료)"},
     {"name": "동래정 고척동점",   "region": "서울 구로구 중앙로14길",    "open_plan": "협의 중", "stage": "후보 자리 탐색 (윤재승 이사)"},
-    {"name": "동래정 부천점",     "region": "인천 부평구 마장로",        "open_plan": "협의 중", "stage": "한화프라자 117호 검토"},
+    {"name": "동래정 부천산곡역점", "region": "인천 부평구",             "open_plan": "협의 중", "stage": "매물 숯불 사용 여부 확인 중"},
 ]
 
 
@@ -152,15 +152,17 @@ PIPELINE_DETAIL = {
     },
     "PAD": {
         "상담중": [
-            {"name": "임철수", "region": "서울 종로", "budget": "2.2억", "stage": "상권분석 의뢰",   "due": "26-05-01"},
-            {"name": "조영자", "region": "경기 성남", "budget": "2억",   "stage": "2단계 대면 예정", "due": "26-05-06"},
+            {"name": "임철수",   "region": "서울 종로",   "budget": "2.2억", "stage": "상권분석 의뢰",         "due": "26-05-01"},
+            {"name": "조영자",   "region": "경기 성남",   "budget": "2억",   "stage": "2단계 대면 예정",       "due": "26-05-06"},
+            {"name": "박재현",   "region": "인천 부평",   "budget": "1.8억", "stage": "정보공개서 발송",       "due": "26-05-10"},
+            {"name": "한경호",   "region": "서울 강서",   "budget": "2.5억", "stage": "1단계 통화 완료",       "due": "26-05-14"},
+            {"name": "윤은영",   "region": "경기 안양",   "budget": "1.6억", "stage": "상권분석 의뢰",         "due": "26-05-18"},
         ],
         "계약완료": [
-            {"name": "정수호점주", "region": "마포 합정", "open_plan": "26-07-15", "stage": "임대차 완료"},
+            {"name": "정수호점주", "region": "서울 마포",   "open_plan": "26-08-15", "stage": "임대차 진행중"},
+            {"name": "김지훈점주", "region": "경기 일산",   "open_plan": "26-09-20", "stage": "상권분석 완료"},
         ],
-        "오픈예정": [
-            {"name": "마포 합정점", "region": "서울 마포구", "open_plan": "26-07-15", "stage": "교육 진행 중"},
-        ],
+        "오픈예정": [],
     },
     "YSK": {
         "상담중": [
@@ -321,6 +323,12 @@ BRANDS = [
         "ceo": "박병진, 양형석",
         "category": "한식 · 백탄직화",
         "accent": "#F59E0B",
+        # 외부 대시보드 링크 — 가맹점 현황 차트의 단계별 막대 클릭 시 새 탭으로 이동
+        "external_links": {
+            "pipeline": {
+                "오픈완료": "https://spbt-dongraejung-dashboard.vercel.app/",
+            },
+        },
         "store_total": DRJ_STORE_TOTAL,
         "kpi": 85,
         "kpi_trend": [80, 82, 83, 84, 85, 85],
@@ -330,14 +338,18 @@ BRANDS = [
         # 오픈완료 = 54, 오픈예정 = 6 (실제 사용자 데이터 반영)
         "pipeline": {"상담중": 28, "계약완료": 12, "오픈예정": len(DRJ_OPENING_STORES), "오픈완료": DRJ_STORE_TOTAL},
         "projects": [
-            {"name": "2세대 모델 정립 (객단가 상향)",  "owner": "이영재", "progress": 70, "due": "2026-07-15", "status": "진행중"},
-            {"name": "해외진출 검토 (일본)",           "owner": "박상진", "progress": 35, "due": "2026-08-31", "status": "진행중"},
-            {"name": "미디어 PR 강화 (경제지·요식업)", "owner": "정수민", "progress": 55, "due": "2026-06-30", "status": "진행중"},
-            {"name": "정보공개서 정기변경 (26.04.22)", "owner": "이영재", "progress": 100,"due": "2026-04-22", "status": "완료"},
+            {"name": "원육 가격 인상 대응 (판매가 정상화)", "owner": "박병진", "progress": 55, "due": "2026-06-30", "status": "진행중"},
+            {"name": "본사 손익 안정화",                     "owner": "양형석", "progress": 60, "due": "2026-07-15", "status": "진행중"},
+            {"name": "KT하이오더 도입 확대 (옥정 검증)",     "owner": "이영재", "progress": 40, "due": "2026-07-30", "status": "진행중"},
+            {"name": "도도포인트 도입 검토",                 "owner": "이영재", "progress": 25, "due": "2026-08-15", "status": "진행중"},
+            {"name": "지방 매장 판매가 통일",               "owner": "박병진", "progress": 35, "due": "2026-06-30", "status": "진행중"},
+            {"name": "정보공개서 정기변경 (26.04.22)",      "owner": "이영재", "progress": 100,"due": "2026-04-22", "status": "완료"},
         ],
         "issues": [
-            {"title": "일산식사점·일산주엽점 매출 하락",     "priority": "중간", "status": "진행중"},
-            {"title": "부산명지·여수여서점 부진 추세",      "priority": "중간", "status": "해결대기"},
+            {"title": "원육(삼목·가브리살) 가격 폭등 대응",   "priority": "높음", "status": "진행중"},
+            {"title": "다산점 지속 컴플레인 (판매가 인상)",  "priority": "높음", "status": "해결대기"},
+            {"title": "산성점 지점 컴플레인",                "priority": "중간", "status": "진행중"},
+            {"title": "지방 매장 판매가 상이 (통일 필요)",   "priority": "중간", "status": "해결대기"},
         ],
     },
     {
@@ -384,24 +396,45 @@ BRANDS = [
         "code": "PAD",
         "name": "평안도식당",
         "ceo": "박병진, 양형석",
-        "category": "한식 · 평양냉면",
+        "category": "한식 · 순대국밥",
         "accent": "#10B981",
-        "store_total": 4,
-        "kpi": 92,
-        "kpi_trend": [90, 91, 92, 92, 91, 92],
-        "franchise_avg_rev": [78_000_000, 79_500_000, 80_500_000, 81_200_000, 81_500_000, 82_000_000],
+        "store_total": 14,
+        "kpi": 88,
+        "kpi_trend": [85, 86, 87, 87, 88, 88],
+        # 14개 매장 평균 ≈ 4,200만 (강남본점·신촌·신림이 평균 끌어올림)
+        "franchise_avg_rev": [40_000_000, 41_000_000, 41_500_000, 42_000_000, 42_000_000, 42_500_000],
+        # 실 데이터 기반 14개 매장 (직영 3 + 가맹 11)
         "stores_monthly": [
-            {"name": "을지로본점", "prev_prev": 89_500_000, "prev": 89_400_000},
-            {"name": "광화문점",   "prev_prev": 82_500_000, "prev": 82_100_000},
-            {"name": "강남대치점", "prev_prev": 78_200_000, "prev": 78_500_000},
-            {"name": "판교점",     "prev_prev": 72_200_000, "prev": 71_800_000},
+            {"name": "강남본점",         "prev_prev": 138_000_000, "prev": 143_700_000},   # 직영
+            {"name": "신촌점",           "prev_prev": 115_000_000, "prev": 119_300_000},
+            {"name": "신림점",           "prev_prev": 73_000_000,  "prev": 72_000_000},    # 리모델링
+            {"name": "신사점",           "prev_prev": 55_500_000,  "prev": 56_700_000},    # 직영
+            {"name": "화정점",           "prev_prev": 54_500_000,  "prev": 54_900_000},
+            {"name": "교대점",           "prev_prev": 47_200_000,  "prev": 48_200_000},    # 직영
+            {"name": "노원점",           "prev_prev": 28_500_000,  "prev": 26_500_000},    # 양도양수 진행
+            {"name": "오금점",           "prev_prev": 22_500_000,  "prev": 23_500_000},
+            {"name": "마두점",           "prev_prev": 11_200_000,  "prev": 11_500_000},
+            {"name": "구로디지털점",      "prev_prev": 11_500_000,  "prev": 10_600_000},   # 점주 정리 필요
+            {"name": "순남네감자탕",      "prev_prev": 6_300_000,   "prev": 6_200_000},
+            {"name": "울산간절곶점",      "prev_prev": 6_500_000,   "prev": 5_950_000},    # 부진
+            {"name": "탄벌점",           "prev_prev": 4_500_000,   "prev": 4_580_000},
+            {"name": "초월가마솥순대국",  "prev_prev": 2_400_000,   "prev": 2_330_000},
         ],
-        "pipeline": {"상담중": 8, "계약완료": 3, "오픈예정": 1, "오픈완료": 3},
+        "pipeline": {"상담중": 5, "계약완료": 2, "오픈예정": 0, "오픈완료": 14},
         "projects": [
-            {"name": "본사 손익 안정화 (고정비 5% 절감)", "owner": "황혜란", "progress": 75, "due": "2026-06-30", "status": "진행중"},
-            {"name": "점주 교육 프로그램 v2 (8주)",       "owner": "이서연", "progress": 40, "due": "2026-07-30", "status": "진행중"},
+            {"name": "본사 손익 안정화 (고정비 5% 절감)",    "owner": "황혜란", "progress": 75, "due": "2026-06-30", "status": "진행중"},
+            {"name": "노원점 양도양수 진행",                  "owner": "양형석", "progress": 55, "due": "2026-06-15", "status": "진행중"},
+            {"name": "구로디지털점 정리 검토",                "owner": "박병진", "progress": 30, "due": "2026-07-31", "status": "진행중"},
+            {"name": "매출 저조 매장 회복 플랜 (5곳)",        "owner": "양형석", "progress": 35, "due": "2026-08-15", "status": "진행중"},
+            {"name": "전용 상품 라인업 확대 (찹쌀순대·머리고기)","owner": "박병진", "progress": 60, "due": "2026-07-15", "status": "진행중"},
+            {"name": "점주 교육 프로그램 v2 (8주)",          "owner": "이서연", "progress": 40, "due": "2026-07-30", "status": "진행중"},
         ],
-        "issues": [],
+        "issues": [
+            {"title": "구로디지털점 점주 정리 필요 (오래된 점주)", "priority": "높음", "status": "진행중"},
+            {"title": "노원점 양도양수 협의 중 (김포 이동)",      "priority": "중간", "status": "진행중"},
+            {"title": "오금점 업변 검토 (개인순대국밥)",          "priority": "중간", "status": "해결대기"},
+            {"title": "신림점 리모델링 진행 중",                 "priority": "낮음", "status": "진행중"},
+        ],
     },
     {
         "code": "YSK",
@@ -603,6 +636,7 @@ def api_brand(code):
         "pipeline": b["pipeline"],
         "pipeline_detail": PIPELINE_DETAIL.get(b["code"], {}),
         "marketing": MARKETING_DATA.get(b["code"], {"month": MONTH_LABELS[-1], "items": []}),
+        "external_links": b.get("external_links", {}),
         "month_labels": MONTH_LABELS,
         "kpi_trend": b["kpi_trend"],
         "stores_monthly": b.get("stores_monthly", []),
