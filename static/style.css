@@ -517,7 +517,7 @@ button { font-family: inherit; cursor: pointer; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 14px;
-    padding: 16px 20px 0;
+    padding: 16px 20px 20px;
 }
 .brand-stat-label {
     font-size: 10.5px;
@@ -547,6 +547,8 @@ button { font-family: inherit; cursor: pointer; }
     color: var(--primary);
     font-size: 12px;
 }
+
+/* 특수 카드(SPBT/해외진출)도 일반 브랜드 카드와 동일한 스타일 — 좌측 라인 컬러만 다름 */
 
 /* =============== Chart cards =============== */
 .chart-grid { display: grid; gap: 14px; }

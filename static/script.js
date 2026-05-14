@@ -247,7 +247,7 @@ async function loadPortfolio(data) {
         },
     ]);
 
-    renderBrandCards(d.brands);
+    renderBrandCards(d.brands, d.special_cards || []);
 
     // ⓪ 가맹점 월 평균 매출 (전전월 vs 전월)
     const fr = d.chart_franchise_avg_rev;
@@ -374,7 +374,7 @@ async function loadPortfolio(data) {
     renderIssuesTable('issuesTable', d.issues, true);
 }
 
-function renderBrandCards(brands) {
+function renderBrandCards(brands, specialCards = []) {
     const grid = document.getElementById('brandCardGrid');
     grid.innerHTML = '';
     brands.forEach(b => {
@@ -393,13 +393,59 @@ function renderBrandCards(brands) {
                 <div><div class="brand-stat-label">진행 프로젝트</div><div class="brand-stat-value">${b.projects_count}건</div></div>
                 <div><div class="brand-stat-label">해결대기 이슈</div><div class="brand-stat-value" style="color:${b.issues_count > 0 ? 'var(--danger)' : 'var(--text)'}">${b.issues_count}건</div></div>
             </div>
-            <div class="brand-card-foot">
-                <span class="brand-card-cta">상세 보기 →</span>
-            </div>
         `;
         div.addEventListener('click', () => setView('brand', b.code));
         grid.appendChild(div);
     });
+    // 특수 카드 (SPBT · 해외진출) — 일반 카드와 동일 스타일
+    specialCards.forEach(c => grid.appendChild(buildSpecialCard(c)));
+}
+
+function buildSpecialCard(c) {
+    const div = document.createElement('div');
+    div.className = 'brand-card';
+    div.style.setProperty('--accent', c.accent);
+    const statsHtml = c.stats.map(s => `
+        <div><div class="brand-stat-label">${s.label}</div><div class="brand-stat-value">${s.value || '-'}</div></div>
+    `).join('');
+    div.innerHTML = `
+        <div class="brand-card-head">
+            <div>
+                <div class="brand-card-title">${c.name}</div>
+            </div>
+        </div>
+        <div class="brand-card-stats">${statsHtml}</div>
+    `;
+    div.addEventListener('click', () => {
+        if (c.click_action === 'external') {
+            if (c.external_url) {
+                window.open(c.external_url, '_blank', 'noopener');
+            } else {
+                openModal({
+                    title: c.name,
+                    sub: '외부 링크 준비 중',
+                    bodyHtml: '<div class="modal-empty">외부 대시보드 URL이 아직 설정되지 않았습니다.<br>관리자에게 문의해주세요.</div>',
+                });
+            }
+        } else if (c.click_action === 'modal' && c.modal) {
+            openGlobalModal(c.modal);
+        }
+    });
+    return div;
+}
+
+function openGlobalModal(m) {
+    let rows = '<table class="issues-table"><thead><tr><th>국가</th><th>진행 단계</th><th>진행 브랜드</th><th>상태</th></tr></thead><tbody>';
+    m.countries.forEach(co => {
+        rows += `<tr>
+            <td><b>${co.name}</b></td>
+            <td>${co.stage}</td>
+            <td>${co.brands.join(', ')}</td>
+            <td><span class="badge badge-status-진행중">${co.status}</span></td>
+        </tr>`;
+    });
+    rows += '</tbody></table>';
+    openModal({ title: m.title, sub: m.subtitle, bodyHtml: rows });
 }
 
 function renderIssueStats(elemId, projectCount, issueCount) {

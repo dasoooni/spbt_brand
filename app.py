@@ -584,6 +584,66 @@ def _sidebar_sorted(brands):
     return sorted(brands, key=lambda b: SIDEBAR_ORDER.index(b["code"]) if b["code"] in SIDEBAR_ORDER else 999)
 
 
+# ============ 특수 카드 (SPBT / 해외진출) ============
+# 일반 브랜드 카드 그리드 끝에 함께 표시되는 별도 정보 카드
+
+SPECIAL_CARDS = [
+    {
+        "code": "SPBT",
+        "name": "SPBT",
+        "subtitle": "프랜차이즈 M&A · 운영",
+        "accent": "#7C3AED",
+        "stats": [
+            {"label": "운용자산 (AUM)", "value": "59.31억"},
+            {"label": "실현 손익",      "value": "+1.79억"},
+            {"label": "브랜드",         "value": ""},   # 자동 채움 (브랜드 수)
+            {"label": "영업이익",       "value": "-"},  # TODO: 사용자 알려주면 입력
+        ],
+        "click_action": "external",
+        "external_url": "https://spbt-dashboard.vercel.app/",
+        "cta_label": "SPBT 대시보드 →",
+    },
+    {
+        "code": "GLOBAL",
+        "name": "해외진출",
+        "subtitle": "Global Expansion",
+        "accent": "#06B6D4",
+        "stats": [
+            {"label": "진출 국가", "value": "4개국"},
+            {"label": "진행 브랜드", "value": "3개"},
+            {"label": "진행 단계", "value": "검토~파트너 미팅"},
+            {"label": "기준일", "value": "26.04"},
+        ],
+        "click_action": "modal",
+        "modal": {
+            "title": "해외진출 현황",
+            "subtitle": "4개 국가 · 3개 브랜드",
+            "countries": [
+                {"name": "일본",       "status": "비즈니스 투어 완료",  "brands": ["동래정", "할머니의 부뚜막"], "stage": "파트너 미팅 중"},
+                {"name": "홍콩",       "status": "손익 시뮬레이션",     "brands": ["할머니의 부뚜막"],          "stage": "재무 검토"},
+                {"name": "베트남",     "status": "현지 컨택",           "brands": ["할머니의 부뚜막"],          "stage": "초기 검토"},
+                {"name": "말레이시아", "status": "브랜드 소개서 완료",  "brands": ["SPBT 통합"],               "stage": "사전 검토"},
+            ],
+        },
+        "cta_label": "진출 현황 보기 →",
+    },
+]
+
+
+def _fill_special_stats(special_cards, kpi, brand_count):
+    """SPBT 카드의 동적 통계 값 채우기"""
+    cards = []
+    for c in special_cards:
+        card = {**c, "stats": [s.copy() for s in c["stats"]]}
+        if card["code"] == "SPBT":
+            # stats 항목 중 label==브랜드 인 것만 자동으로 채움
+            for s in card["stats"]:
+                if s["label"] == "브랜드":
+                    s["value"] = f"{brand_count}개"
+        cards.append(card)
+    return cards
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -614,17 +674,20 @@ def api_portfolio():
             })
     all_issues.sort(key=lambda x: (priority_order.get(x["priority"], 9), status_order.get(x["status"], 9)))
 
+    main_kpi = {
+        "avg_kpi": avg_kpi,
+        "avg_kpi_color": _kpi_color(avg_kpi),
+        "total_projects": total_projects,
+        "total_opening": total_opening,
+        "total_issues": total_issues,
+        "total_stores": total_stores,
+    }
+
     return jsonify({
         "month_labels": MONTH_LABELS,
-        "main_kpi": {
-            "avg_kpi": avg_kpi,
-            "avg_kpi_color": _kpi_color(avg_kpi),
-            "total_projects": total_projects,
-            "total_opening": total_opening,
-            "total_issues": total_issues,
-            "total_stores": total_stores,
-        },
+        "main_kpi": main_kpi,
         "brands": brand_summaries,
+        "special_cards": _fill_special_stats(SPECIAL_CARDS, main_kpi, len(BRANDS)),
         "chart_kpi": [{"name": b["name"], "kpi": b["kpi"], "color": _kpi_color(b["kpi"]), "accent": b["accent"]} for b in sorted_brands],
         "chart_pipeline": [{"name": b["name"], "opening": b["pipeline"]["오픈예정"], "opened": b["pipeline"]["오픈완료"]} for b in sorted_brands],
         "chart_franchise_avg_rev": {
