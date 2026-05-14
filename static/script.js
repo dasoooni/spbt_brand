@@ -29,8 +29,9 @@ function renderKpiRow(targetId, items) {
     const row = document.getElementById(targetId);
     row.innerHTML = items.map((it, i) => {
         const hasFoot = it.footLeft || it.footRight;
+        const clickable = !!(it.scrollTo || it.onClick);
         return `
-        <div class="kpi-card ${it.tint ? 'kpi-tint-' + it.tint : ''} ${it.scrollTo ? 'kpi-card-clickable' : ''}" ${it.scrollTo ? `data-scroll-to="${it.scrollTo}"` : ''}>
+        <div class="kpi-card ${it.tint ? 'kpi-tint-' + it.tint : ''} ${clickable ? 'kpi-card-clickable' : ''}">
             <div class="kpi-head">
                 <div class="kpi-label">${it.label}</div>
             </div>
@@ -45,15 +46,77 @@ function renderKpiRow(targetId, items) {
     `;
     }).join('');
 
-    // 스크롤 가능 카드에 클릭 이벤트
-    row.querySelectorAll('.kpi-card-clickable').forEach(el => {
-        el.addEventListener('click', () => {
-            const target = document.getElementById(el.dataset.scrollTo);
-            if (!target) return;
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            target.classList.add('flash-highlight');
-            setTimeout(() => target.classList.remove('flash-highlight'), 1600);
-        });
+    // 카드별 클릭 동작 (scrollTo 또는 onClick 콜백)
+    row.querySelectorAll('.kpi-card').forEach((el, idx) => {
+        const it = items[idx];
+        if (it.scrollTo) {
+            el.addEventListener('click', () => {
+                const target = document.getElementById(it.scrollTo);
+                if (!target) return;
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                target.classList.add('flash-highlight');
+                setTimeout(() => target.classList.remove('flash-highlight'), 1600);
+            });
+        } else if (typeof it.onClick === 'function') {
+            el.addEventListener('click', () => it.onClick());
+        }
+    });
+}
+
+/* ============ Modal ============ */
+function openModal({ title, sub, bodyHtml }) {
+    document.getElementById('modalTitle').textContent = title || '';
+    document.getElementById('modalSub').textContent = sub || '';
+    document.getElementById('modalBody').innerHTML = bodyHtml || '';
+    document.getElementById('modalBackdrop').style.display = 'flex';
+}
+function closeModal() {
+    document.getElementById('modalBackdrop').style.display = 'none';
+}
+(function setupModalCloseHandlers() {
+    const backdrop = document.getElementById('modalBackdrop');
+    if (!backdrop) return;
+    backdrop.addEventListener('click', e => {
+        if (e.target === backdrop) closeModal();
+    });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+    });
+})();
+
+function buildIssuesTableHtml(issues, includeBrand) {
+    if (!issues.length) {
+        return '<div class="modal-empty">등록된 안건이 없습니다.</div>';
+    }
+    let html = '<table class="issues-table"><thead><tr><th>안건명</th>';
+    if (includeBrand) html += '<th>브랜드</th>';
+    html += '<th>우선순위</th><th>상태</th></tr></thead><tbody>';
+    issues.forEach(i => {
+        html += '<tr>';
+        html += `<td><b>${i.title}</b></td>`;
+        if (includeBrand) html += `<td><span class="brand-tag" style="--accent:${i.accent}">${i.brand}</span></td>`;
+        html += `<td><span class="badge badge-priority-${i.priority}">${i.priority}</span></td>`;
+        html += `<td><span class="badge badge-status-${i.status}">${i.status}</span></td>`;
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+}
+
+function openPortfolioIssuesModal(issues) {
+    openModal({
+        title: `해결대기 이슈 (${issues.length}건)`,
+        sub: `전 브랜드 미완료 안건 · 우선순위순 정렬`,
+        bodyHtml: buildIssuesTableHtml(issues, true),
+    });
+}
+
+function openBrandIssuesModal(brandName, issues) {
+    openModal({
+        title: `${brandName} 해결대기 이슈 (${issues.length}건)`,
+        sub: `우선순위순 정렬`,
+        bodyHtml: buildIssuesTableHtml(issues.map(i => ({...i})), false),
     });
 }
 
@@ -142,7 +205,7 @@ function setView(newView, code = null) {
         document.getElementById('logoMark').textContent = meta.name.charAt(0);
         document.getElementById('logoMark').style.background = meta.accent;
         document.getElementById('topTitle').textContent = meta.name;
-        document.getElementById('topSub').textContent = meta.category + ' · 대표 ' + meta.ceo;
+        document.getElementById('topSub').textContent = '';
         loadBrand(code);
     }
 }
@@ -180,6 +243,7 @@ async function loadPortfolio(data) {
             valueColor: m.total_issues > 0 ? 'red' : '',
             footLeft: '',
             footRight: '',
+            onClick: () => openPortfolioIssuesModal(d.issues || []),
         },
     ]);
 
@@ -406,6 +470,7 @@ async function loadBrand(code) {
             valueColor: m.issues_count > 0 ? 'red' : '',
             footLeft: '',
             footRight: '',
+            onClick: () => openBrandIssuesModal(d.name, d.issues || []),
         },
     ]);
 
@@ -558,24 +623,7 @@ function renderStoresMonthly(d) {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: {
-                    position: 'top',
-                    align: 'end',
-                    labels: {
-                        boxWidth: 12,
-                        boxHeight: 12,
-                        usePointStyle: true,
-                        padding: 12,
-                        font: { size: 12 },
-                        generateLabels: (chart) => {
-                            return [
-                                { text: `전전월 (${meta.prev_prev_month})`, fillStyle: '#D1D5DB', strokeStyle: '#D1D5DB', pointStyle: 'rect' },
-                                { text: `전월 (${meta.prev_month}) 상승`,    fillStyle: accent,    strokeStyle: accent,    pointStyle: 'rect' },
-                                { text: `전월 (${meta.prev_month}) 하락`,    fillStyle: '#EF4444', strokeStyle: '#EF4444', pointStyle: 'rect' },
-                            ];
-                        },
-                    },
-                },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: ctx => {
@@ -735,7 +783,7 @@ function renderMarketing(d) {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, padding: 10, font: { size: 12 } } },
+                legend: { display: false },
                 tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '만원' } },
             },
             scales: {
