@@ -15,6 +15,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 DASHBOARD_PASSWORD = (
     os.environ.get("DASHBOARD_PASSWORD")
     or os.environ.get("PASSWORD")
+    or os.environ.get("spbt")
 )
 
 
