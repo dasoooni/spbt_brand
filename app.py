@@ -9,15 +9,13 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 
 # ============ HTTP Basic 인증 ============
-# 환경변수 DASHBOARD_PASSWORD 가 설정된 경우에만 인증 적용
-# 로컬 개발: 환경변수 없으면 비밀번호 없이 접속 가능 (편의)
-# Render 배포: 환경변수 설정해 비밀번호 보호
-DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "spbt")
-DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD")
-
-
-def _check_auth(username, password):
-    return username == DASHBOARD_USER and password == DASHBOARD_PASSWORD
+# 환경변수 PASSWORD 또는 DASHBOARD_PASSWORD 가 설정되면 인증 활성화
+# 사용자명은 검증하지 않음 (아무거나 입력해도 OK) → 비밀번호만 일치하면 통과
+# 로컬 개발: 환경변수 없으면 비밀번호 없이 접속 (편의)
+DASHBOARD_PASSWORD = (
+    os.environ.get("DASHBOARD_PASSWORD")
+    or os.environ.get("PASSWORD")
+)
 
 
 def _authenticate():
@@ -34,7 +32,8 @@ def _require_auth():
     if not DASHBOARD_PASSWORD:
         return None
     auth = request.authorization
-    if not auth or not _check_auth(auth.username, auth.password):
+    # 사용자명은 무시, 비밀번호만 검증
+    if not auth or auth.password != DASHBOARD_PASSWORD:
         return _authenticate()
 
 MONTH_LABELS = ["25.11", "25.12", "26.01", "26.02", "26.03", "26.04"]
