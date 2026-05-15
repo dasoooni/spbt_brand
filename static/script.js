@@ -188,12 +188,22 @@ async function loadSidebar() {
 }
 
 /* ============ View switching ============ */
-function setView(newView, code = null) {
+function setView(newView, code = null, opts = {}) {
     view = newView;
     document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
     document.querySelector(`.view-panel[data-view="${newView}"]`).classList.add('active');
     document.querySelectorAll('.brand-item, .view-item').forEach(el => el.classList.remove('active'));
     destroyAll();
+
+    // URL 해시 동기화 — 새로고침해도 같은 페이지 유지
+    if (!opts.skipHash) {
+        const newHash = newView === 'brand' && code ? '#brand=' + code : '';
+        if (newHash) {
+            history.replaceState(null, '', location.pathname + location.search + newHash);
+        } else {
+            history.replaceState(null, '', location.pathname + location.search);
+        }
+    }
 
     if (newView === 'portfolio') {
         document.querySelector('.view-item[data-view="portfolio"]').classList.add('active');
@@ -205,6 +215,7 @@ function setView(newView, code = null) {
     } else {
         currentBrand = code;
         const meta = brandsMeta.find(b => b.code === code);
+        if (!meta) { setView('portfolio'); return; }
         document.querySelector(`.brand-item[data-id="${code}"]`).classList.add('active');
         document.getElementById('logoMark').textContent = meta.name.charAt(0);
         document.getElementById('logoMark').style.background = meta.accent;
@@ -1036,7 +1047,28 @@ document.getElementById('btnRefresh')?.addEventListener('click', async () => {
     }
 });
 
+function _parseHashBrand() {
+    const m = (location.hash || '').match(/brand=([A-Za-z0-9_]+)/);
+    return m ? m[1] : null;
+}
+
 (async function init() {
     const portfolioData = await loadSidebar();
-    loadPortfolio(portfolioData);
+    const code = _parseHashBrand();
+    if (code && brandsMeta.find(b => b.code === code)) {
+        // URL 해시에 브랜드 코드가 있으면 그 브랜드 페이지로 바로 진입
+        setView('brand', code, { skipHash: true });
+    } else {
+        loadPortfolio(portfolioData);
+    }
 })();
+
+// 뒤로/앞으로 가기 + URL 직접 수정 시 hashchange 핸들
+window.addEventListener('hashchange', () => {
+    const code = _parseHashBrand();
+    if (code && brandsMeta.find(b => b.code === code)) {
+        if (view !== 'brand' || currentBrand !== code) setView('brand', code, { skipHash: true });
+    } else {
+        if (view !== 'portfolio') setView('portfolio', null, { skipHash: true });
+    }
+});
