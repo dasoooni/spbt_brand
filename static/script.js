@@ -983,29 +983,40 @@ function renderBudget(d) {
     });
 }
 
-/* ============ 매출·물류 사이트 계정 ============ */
+/* ============ 매출·물류 사이트 계정 (모달) ============ */
+let _currentAccounts = [];
 function renderAccounts(d) {
-    const accounts = d.accounts || [];
-    let html = '<thead><tr><th>사이트</th><th>URL</th><th>아이디</th><th>비밀번호</th></tr></thead><tbody>';
+    // 데이터만 저장 — 표시는 버튼 클릭 시 모달로
+    _currentAccounts = d.accounts || [];
+    document.getElementById('accountsBtn').onclick = openAccountsModal;
+}
+
+function openAccountsModal() {
+    const accounts = _currentAccounts || [];
+    let bodyHtml;
     if (!accounts.length) {
-        html += '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 계정이 없습니다.</td></tr>';
+        bodyHtml = '<div class="modal-empty">등록된 계정이 없습니다.</div>';
     } else {
-        accounts.forEach(a => {
+        let html = '<table class="issues-table"><thead><tr><th>사이트</th><th>URL</th><th>아이디</th><th>비밀번호</th></tr></thead><tbody>';
+        accounts.forEach((a, idx) => {
             html += `<tr>
                 <td><b>${a.site}</b></td>
                 <td><a href="${a.url}" target="_blank" rel="noopener" class="project-link">${a.url} <span class="link-icon">↗</span></a></td>
                 <td><code class="account-code">${a.id}</code></td>
-                <td><code class="account-code account-pw" data-pw="${a.pw}">••••••••</code></td>
+                <td><code class="account-code account-pw" data-idx="${idx}" data-pw="${a.pw}">••••••••</code></td>
             </tr>`;
         });
+        html += '</tbody></table>';
+        bodyHtml = html;
     }
-    html += '</tbody>';
-    const table = document.getElementById('accountsTable');
-    table.innerHTML = html;
-    // 비밀번호 클릭 시 토글로 보이기
-    table.querySelectorAll('.account-pw').forEach(el => {
+    openModal({
+        title: '주요 사이트 · 계정 정보',
+        sub: '비밀번호 칸을 클릭하면 보기/숨기기',
+        bodyHtml,
+    });
+    // 모달 렌더 후 비밀번호 토글 핸들러 연결
+    document.querySelectorAll('#modalBody .account-pw').forEach(el => {
         el.style.cursor = 'pointer';
-        el.title = '클릭하면 비밀번호 보기/숨기기';
         let shown = false;
         el.addEventListener('click', () => {
             shown = !shown;

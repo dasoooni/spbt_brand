@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SPBT 운영 관리 · 멀티 브랜드 대시보드</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260515f" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260515g" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -93,7 +93,13 @@
 
             <!-- =========== 브랜드 상세 뷰 =========== -->
             <section class="view-panel" data-view="brand">
-                <div class="kpi-row" id="brandKpiRow"></div>
+                <div class="brand-kpi-section">
+                    <div class="kpi-row" id="brandKpiRow"></div>
+                    <button class="quick-btn" id="accountsBtn" type="button">
+                        <span class="quick-btn-line">주요 사이트</span>
+                        <span class="quick-btn-line">계정 정보</span>
+                    </button>
+                </div>
 
                 <div class="chart-grid grid-2-2">
                     <div class="chart-card">
@@ -166,17 +172,6 @@
                     </div>
                 </div>
 
-                <div class="issues-card">
-                    <div class="issues-header">
-                        <div>
-                            <h3>매출·물류 사이트 계정</h3>
-                            <span class="chart-sub">홈페이지·플랫폼 로그인 정보</span>
-                        </div>
-                    </div>
-                    <div class="issues-table-wrap">
-                        <table class="issues-table" id="accountsTable"></table>
-                    </div>
-                </div>
 
                 <div class="issues-card">
                     <div class="issues-header">
@@ -221,6 +216,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260515f"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260515g"></script>
 </body>
 </html>
