@@ -671,7 +671,7 @@ SPECIAL_CARDS = [
         "stats": [
             {"label": "진출 국가",   "value": "4개국"},
             {"label": "진행 브랜드", "value": "3개"},
-            {"label": "오픈 예정",   "value": "0개"},
+            {"label": "오픈 예정",   "value": "2개"},
             {"label": "오픈 완료",   "value": "0개"},
         ],
         "click_action": "modal",

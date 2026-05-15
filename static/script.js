@@ -374,8 +374,8 @@ async function loadPortfolio(data) {
         data: {
             labels: d.chart_pipeline.map(b => b.name),
             datasets: [
-                { label: '오픈완료', data: d.chart_pipeline.map(b => b.opened),  backgroundColor: C.green,  borderRadius: 5, borderSkipped: false, stack: 'p' },
-                { label: '오픈예정', data: d.chart_pipeline.map(b => b.opening), backgroundColor: C.orange, borderRadius: 5, borderSkipped: false, stack: 'p' },
+                { label: '운영',      data: d.chart_pipeline.map(b => b.opened),  backgroundColor: C.green,  borderRadius: 5, borderSkipped: false, stack: 'p' },
+                { label: '오픈 예정', data: d.chart_pipeline.map(b => b.opening), backgroundColor: C.orange, borderRadius: 5, borderSkipped: false, stack: 'p' },
             ],
         },
         options: {
