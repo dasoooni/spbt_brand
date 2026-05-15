@@ -584,6 +584,66 @@ def _sidebar_sorted(brands):
     return sorted(brands, key=lambda b: SIDEBAR_ORDER.index(b["code"]) if b["code"] in SIDEBAR_ORDER else 999)
 
 
+# ============ 본사 손익 / 가용 예산 / 사이트 계정 (브랜드별 부가 정보) ============
+
+HQ_PL = {  # 본사 손익 (단위: 원) - 전전월(26.03) / 전월(26.04)
+    "HMNBM": {"prev_prev_rev": 175_000_000, "prev_rev": 182_000_000, "prev_prev_op": 18_500_000, "prev_op": 21_200_000},
+    "DRJ":   {"prev_prev_rev": 235_000_000, "prev_rev": 252_000_000, "prev_prev_op": 24_500_000, "prev_op": 28_500_000},
+    "MJD":   {"prev_prev_rev": 320_000_000, "prev_rev": 348_000_000, "prev_prev_op": 41_000_000, "prev_op": 46_500_000},
+    "PAD":   {"prev_prev_rev": 247_000_000, "prev_rev": 241_000_000, "prev_prev_op": 32_500_000, "prev_op": 30_500_000},
+    "YSK":   {"prev_prev_rev":  88_500_000, "prev_rev":  86_200_000, "prev_prev_op": -4_500_000, "prev_op": -2_800_000},
+    "CYHU":  {"prev_prev_rev": 142_000_000, "prev_rev": 152_000_000, "prev_prev_op": 12_500_000, "prev_op": 15_300_000},
+}
+
+BUDGET = {  # 가용 예산 (단위: 만원) — 투자금 / 지원금 / 대출 / 영업이익 누적
+    "HMNBM": {"투자금": 30_000, "지원금":  5_000, "대출": 10_000, "영업이익": 15_000},
+    "DRJ":   {"투자금": 80_000, "지원금": 12_000, "대출": 30_000, "영업이익": 25_000},
+    "MJD":   {"투자금":120_000, "지원금": 15_000, "대출": 50_000, "영업이익": 40_000},
+    "PAD":   {"투자금": 25_000, "지원금":  8_000, "대출": 12_000, "영업이익": 18_000},
+    "YSK":   {"투자금": 50_000, "지원금": 10_000, "대출": 25_000, "영업이익":  5_000},
+    "CYHU":  {"투자금": 60_000, "지원금": 10_000, "대출": 22_000, "영업이익": 12_000},
+}
+
+ACCOUNTS = {  # 매출·물류·운영 사이트 계정 정보 (placeholder, 사용자가 채워넣을 영역)
+    "HMNBM": [
+        {"site": "아임웹 (홈페이지)",      "url": "https://hmnbm.imweb.me",      "id": "admin@hmnbm.co.kr",  "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com", "id": "hmnbm_naver",        "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/hmnbm",  "id": "@hmnbm_official",    "pw": "********"},
+        {"site": "카카오톡 채널",         "url": "https://center-pf.kakao.com",  "id": "hmnbm_channel",      "pw": "********"},
+    ],
+    "DRJ": [
+        {"site": "아임웹 (홈페이지)",      "url": "https://dongraejung.imweb.me", "id": "admin@drj.co.kr",    "pw": "********"},
+        {"site": "카페24 (물류)",          "url": "https://cafe24.com",           "id": "drj_logistics",      "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com",  "id": "drj_naver",          "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/drj",     "id": "@dongraejung",       "pw": "********"},
+        {"site": "마이프차",               "url": "https://myfranchise.kr",        "id": "drj_mf",             "pw": "********"},
+    ],
+    "MJD": [
+        {"site": "어플리케이션 v2",        "url": "https://mjkimssi-app.kr",      "id": "admin@mjd.co.kr",    "pw": "********"},
+        {"site": "아임웹 (홈페이지)",      "url": "https://mjkimssi.imweb.me",    "id": "mjd_imweb",          "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com",  "id": "mjd_naver",          "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/mjkimssi","id": "@mjkimssi",          "pw": "********"},
+    ],
+    "PAD": [
+        {"site": "아임웹 (홈페이지)",      "url": "https://pyungando.imweb.me",   "id": "admin@pad.co.kr",    "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com",  "id": "pad_naver",          "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/pad",     "id": "@pyungando",         "pw": "********"},
+    ],
+    "YSK": [
+        {"site": "아임웹 (홈페이지)",      "url": "https://yosyoku.imweb.me",     "id": "admin@ysk.co.kr",    "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com",  "id": "ysk_naver",          "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/yosyoku", "id": "@yosyoku",           "pw": "********"},
+        {"site": "배달 플랫폼",            "url": "https://ceo.baemin.com",        "id": "ysk_delivery",       "pw": "********"},
+    ],
+    "CYHU": [
+        {"site": "아임웹 (홈페이지)",      "url": "https://cyhu.imweb.me",        "id": "admin@cyhu.co.kr",   "pw": "********"},
+        {"site": "유튜브 채널",            "url": "https://youtube.com/@cyhu",     "id": "cyhu_youtube",       "pw": "********"},
+        {"site": "네이버 스마트플레이스", "url": "https://smartplace.naver.com",  "id": "cyhu_naver",         "pw": "********"},
+        {"site": "인스타그램 비즈니스",   "url": "https://instagram.com/cyhu",    "id": "@cheongnyeon_hanwoo","pw": "********"},
+    ],
+}
+
+
 # ============ 특수 카드 (SPBT / 해외진출) ============
 # 일반 브랜드 카드 그리드 끝에 함께 표시되는 별도 정보 카드
 
@@ -609,10 +669,10 @@ SPECIAL_CARDS = [
         "subtitle": "Global Expansion",
         "accent": "#06B6D4",
         "stats": [
-            {"label": "진출 국가", "value": "4개국"},
+            {"label": "진출 국가",   "value": "4개국"},
             {"label": "진행 브랜드", "value": "3개"},
-            {"label": "진행 단계", "value": "검토~파트너 미팅"},
-            {"label": "기준일", "value": "26.04"},
+            {"label": "오픈 예정",   "value": "0개"},
+            {"label": "오픈 완료",   "value": "0개"},
         ],
         "click_action": "modal",
         "modal": {
@@ -710,6 +770,22 @@ def api_portfolio():
     })
 
 
+def _projects_with_links(projects, code):
+    """프로젝트별 구글시트 링크 매핑 (코드에 sheet_url 없으면 PROJECT_LINKS에서 가져옴)"""
+    return [
+        {**p, "sheet_url": p.get("sheet_url") or PROJECT_LINKS.get(code, {}).get(p["name"])}
+        for p in projects
+    ]
+
+
+# 프로젝트별 구글시트 URL (사용자가 추가로 알려주면 여기에 매핑)
+PROJECT_LINKS = {
+    "DRJ": {
+        # "2세대 모델 정립 (객단가 상향)": "https://docs.google.com/...",
+    },
+}
+
+
 @app.route("/api/brand/<code>")
 def api_brand(code):
     b = _by_code(code)
@@ -730,10 +806,13 @@ def api_brand(code):
             "issues_count": sum(1 for i in b["issues"] if i["status"] != "완료"),
             "store_total": b["store_total"],
         },
-        "projects": b["projects"],
+        "projects": _projects_with_links(b["projects"], b["code"]),
         "pipeline": b["pipeline"],
         "pipeline_detail": PIPELINE_DETAIL.get(b["code"], {}),
         "marketing": MARKETING_DATA.get(b["code"], {"month": MONTH_LABELS[-1], "items": []}),
+        "hq_pl": HQ_PL.get(b["code"], {}),
+        "budget": BUDGET.get(b["code"], {}),
+        "accounts": ACCOUNTS.get(b["code"], []),
         "external_links": b.get("external_links", {}),
         "month_labels": MONTH_LABELS,
         "kpi_trend": b["kpi_trend"],

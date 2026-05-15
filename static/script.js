@@ -113,7 +113,7 @@ function buildIssuesTableHtml(issues, includeBrand) {
 
 function openPortfolioIssuesModal(issues) {
     openModal({
-        title: `해결대기 이슈 (${issues.length}건)`,
+        title: `미해결 이슈 (${issues.length}건)`,
         sub: `전 브랜드 미완료 안건 · 우선순위순 정렬`,
         bodyHtml: buildIssuesTableHtml(issues, true),
     });
@@ -121,7 +121,7 @@ function openPortfolioIssuesModal(issues) {
 
 function openBrandIssuesModal(brandName, issues) {
     openModal({
-        title: `${brandName} 해결대기 이슈 (${issues.length}건)`,
+        title: `${brandName} 미해결 이슈 (${issues.length}건)`,
         sub: `우선순위순 정렬`,
         bodyHtml: buildIssuesTableHtml(issues.map(i => ({...i})), false),
     });
@@ -173,7 +173,6 @@ async function loadSidebar() {
     list.innerHTML = brandsMeta.map(b => `
         <li class="brand-item" data-id="${b.code}">
             <span class="dot" style="background:${b.accent}"></span>${b.name}
-            <span class="manager">${b.store_total}개</span>
         </li>
     `).join('');
 
@@ -201,9 +200,7 @@ function setView(newView, code = null) {
         document.getElementById('logoMark').textContent = 'S';
         document.getElementById('logoMark').style.background = 'linear-gradient(135deg, #8B5CF6, #6366F1)';
         document.getElementById('topTitle').textContent = 'SPBT 운영 관리';
-        document.getElementById('topSub').textContent = 'Multi-Brand Operations · 멀티 브랜드 대시보드';
-        document.getElementById('scopeValue').textContent = '전체 보기';
-        document.getElementById('scopeSub').textContent = `${brandsMeta.length}개 브랜드 · 기준월 26.04`;
+        document.getElementById('topSub').textContent = '멀티 브랜드 대시보드';
         loadPortfolio();
     } else {
         currentBrand = code;
@@ -237,14 +234,14 @@ async function loadPortfolio(data) {
             scrollTo: 'kpiChartCard',
         },
         {
-            label: '운영 / 오픈예정 가맹점',
+            label: '운영 / 오픈 예정',
             tint: 'purple',
             value: `<span class="kpi-value-split">${m.total_stores}<span class="split-sub">/ +${m.total_opening}</span></span>`,
             footLeft: '',
             footRight: '',
         },
         {
-            label: '해결대기 이슈',
+            label: '미해결 이슈',
             tint: m.total_issues > 0 ? 'red' : 'green',
             value: `${m.total_issues}<span class="unit">건</span>`,
             valueColor: m.total_issues > 0 ? 'red' : '',
@@ -398,7 +395,7 @@ function renderBrandCards(brands, specialCards = []) {
                 <div><div class="brand-stat-label">운영중</div><div class="brand-stat-value">${b.store_total}개</div></div>
                 <div><div class="brand-stat-label">오픈 예정</div><div class="brand-stat-value">${b.opening_count}개</div></div>
                 <div><div class="brand-stat-label">진행 프로젝트</div><div class="brand-stat-value">${b.projects_count}건</div></div>
-                <div><div class="brand-stat-label">해결대기 이슈</div><div class="brand-stat-value" style="color:${b.issues_count > 0 ? 'var(--danger)' : 'var(--text)'}">${b.issues_count}건</div></div>
+                <div><div class="brand-stat-label">미해결 이슈</div><div class="brand-stat-value" style="color:${b.issues_count > 0 ? 'var(--danger)' : 'var(--text)'}">${b.issues_count}건</div></div>
             </div>
         `;
         div.addEventListener('click', () => setView('brand', b.code));
@@ -461,7 +458,7 @@ function renderIssueStats(elemId, projectCount, issueCount) {
     const issueCls = issueCount === 0 ? 'ok' : issueCount >= 3 ? 'high' : 'mid';
     el.innerHTML = `
         <div class="issues-stat">진행중 프로젝트<span class="issues-stat-value">${projectCount}건</span></div>
-        <div class="issues-stat">해결대기 이슈<span class="issues-stat-value ${issueCls}">${issueCount}건</span></div>
+        <div class="issues-stat">미해결 이슈<span class="issues-stat-value ${issueCls}">${issueCount}건</span></div>
     `;
 }
 
@@ -499,31 +496,29 @@ async function loadBrand(code) {
     const d = await res.json();
     const m = d.main_kpi;
 
-    document.getElementById('scopeValue').textContent = d.name;
-    document.getElementById('scopeSub').textContent = `대표 ${d.ceo} · 기준월 26.04`;
-
     const kpiColor = m.kpi_color;
     const kpiTag = kpiColor === 'green' ? '양호' : kpiColor === 'orange' ? '주의' : '경고';
 
+    // 브랜드 상세 KPI 카드 — 모든 브랜드 동일 색조(보라/주황/빨강)로 통일
     renderKpiRow('brandKpiRow', [
         {
             label: 'KPI 달성률',
-            tint: kpiColor,
+            tint: 'purple',
             value: `${m.kpi}<span class="unit">%</span>`,
             valueColor: kpiColor,
             footLeft: '',
             footRight: '',
         },
         {
-            label: '운영 / 오픈예정 가맹점',
-            tint: 'purple',
+            label: '운영 / 오픈 예정',
+            tint: 'orange',
             value: `<span class="kpi-value-split">${m.store_total}<span class="split-sub">/ +${m.opening_count}</span></span>`,
             footLeft: '',
             footRight: '',
         },
         {
-            label: '해결대기 이슈',
-            tint: m.issues_count > 0 ? 'red' : 'green',
+            label: '미해결 이슈',
+            tint: 'red',
             value: `${m.issues_count}<span class="unit">건</span>`,
             valueColor: m.issues_count > 0 ? 'red' : '',
             footLeft: '',
@@ -615,6 +610,11 @@ async function loadBrand(code) {
     // 월 마케팅 진행 현황
     renderMarketing(d);
 
+    // 본사 손익 / 가용 예산 / 사이트 계정
+    renderHqPl(d);
+    renderBudget(d);
+    renderAccounts(d);
+
     const activeProjects = d.projects.filter(p => p.status !== '완료');
     renderIssueStats('brandProjectStats', activeProjects.length, m.issues_count);
 
@@ -624,8 +624,11 @@ async function loadBrand(code) {
     } else {
         [...d.projects].sort((a,b) => b.progress - a.progress).forEach(p => {
             const low = p.progress < 50;
+            const nameHtml = p.sheet_url
+                ? `<a href="${p.sheet_url}" target="_blank" rel="noopener" class="project-link"><b>${p.name}</b> <span class="link-icon">↗</span></a>`
+                : `<b>${p.name}</b>`;
             ph += `<tr>
-                <td><b>${p.name}</b></td>
+                <td>${nameHtml}</td>
                 <td class="progress-cell">
                     <div class="progress-bar"><div class="progress-bar-fill ${low ? 'low' : ''}" style="width:${p.progress}%"></div></div>
                     <div class="progress-text">${p.progress}%</div>
@@ -886,6 +889,129 @@ function renderMarketing(d) {
     });
     html += '</tbody>';
     document.getElementById('marketingTable').innerHTML = html;
+}
+
+/* ============ 본사 손익 ============ */
+function renderHqPl(d) {
+    const wrap = document.getElementById('hqPlWrap');
+    if (!wrap) return;
+    const hq = d.hq_pl || {};
+    if (!Object.keys(hq).length) {
+        wrap.innerHTML = '<div class="modal-empty">데이터 없음</div>';
+        return;
+    }
+    const items = [
+        { key: 'rev', label: '매출액', prev_prev: hq.prev_prev_rev || 0, prev: hq.prev_rev || 0 },
+        { key: 'op',  label: '영업이익', prev_prev: hq.prev_prev_op || 0, prev: hq.prev_op || 0 },
+    ];
+    const maxAbs = Math.max(...items.flatMap(i => [Math.abs(i.prev_prev), Math.abs(i.prev)]), 1);
+    const fmt = v => {
+        const sign = v < 0 ? '-' : '+';
+        const abs = Math.abs(v);
+        if (abs >= 1e8) return sign + (abs / 1e8).toFixed(2) + '억';
+        return sign + (abs / 1e4).toFixed(0) + '만';
+    };
+    wrap.innerHTML = items.map(it => {
+        const pct = it.prev_prev ? ((it.prev - it.prev_prev) / Math.abs(it.prev_prev) * 100) : 0;
+        const upDown = pct >= 0 ? 'up' : 'down';
+        const sign = pct >= 0 ? '+' : '';
+        const prevPrevWidth = Math.abs(it.prev_prev) / maxAbs * 100;
+        const prevWidth = Math.abs(it.prev) / maxAbs * 100;
+        const prevPosClass = it.prev >= 0 ? 'positive' : 'negative';
+        const prevPrevPosClass = it.prev_prev >= 0 ? 'positive' : 'negative';
+        return `
+        <div class="hq-pl-row">
+            <div class="hq-pl-label">${it.label}</div>
+            <div class="hq-pl-bars">
+                <div class="hq-pl-bar-row">
+                    <span class="hq-pl-bar-period">전전월</span>
+                    <div class="hq-pl-bar"><div class="hq-pl-bar-fill prev_prev" style="width:${prevPrevWidth}%"></div></div>
+                    <span class="hq-pl-bar-value ${prevPrevPosClass}">${fmt(it.prev_prev)}</span>
+                </div>
+                <div class="hq-pl-bar-row">
+                    <span class="hq-pl-bar-period">전월</span>
+                    <div class="hq-pl-bar"><div class="hq-pl-bar-fill prev ${it.prev < 0 ? 'negative' : ''}" style="width:${prevWidth}%"></div></div>
+                    <span class="hq-pl-bar-value ${prevPosClass}">${fmt(it.prev)}</span>
+                </div>
+                <div class="hq-pl-change ${upDown}">전월 대비 ${sign}${pct.toFixed(1)}%</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ============ 가용 예산 (도넛) ============ */
+function renderBudget(d) {
+    const budget = d.budget || {};
+    const keys = Object.keys(budget);
+    if (!keys.length) return;
+    const total = keys.reduce((s, k) => s + budget[k], 0);
+    document.getElementById('budgetTotal').innerHTML =
+        `<div class="issues-stat">총 예산<span class="issues-stat-value">${total.toLocaleString()}만</span></div>`;
+
+    const palette = { '투자금': C.primary, '지원금': C.green, '대출': C.orange, '영업이익': C.info };
+
+    destroy('budget');
+    charts.budget = new Chart(document.getElementById('budgetChart'), {
+        type: 'doughnut',
+        data: {
+            labels: keys,
+            datasets: [{
+                data: keys.map(k => budget[k]),
+                backgroundColor: keys.map(k => palette[k] || C.gray),
+                borderWidth: 0,
+                hoverOffset: 6,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, padding: 12, font: { size: 12 } },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const v = ctx.parsed;
+                            const pct = total > 0 ? (v / total * 100).toFixed(1) : 0;
+                            return `${ctx.label}: ${v.toLocaleString()}만 (${pct}%)`;
+                        },
+                    },
+                },
+            },
+        },
+    });
+}
+
+/* ============ 매출·물류 사이트 계정 ============ */
+function renderAccounts(d) {
+    const accounts = d.accounts || [];
+    let html = '<thead><tr><th>사이트</th><th>URL</th><th>아이디</th><th>비밀번호</th></tr></thead><tbody>';
+    if (!accounts.length) {
+        html += '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">등록된 계정이 없습니다.</td></tr>';
+    } else {
+        accounts.forEach(a => {
+            html += `<tr>
+                <td><b>${a.site}</b></td>
+                <td><a href="${a.url}" target="_blank" rel="noopener" class="project-link">${a.url} <span class="link-icon">↗</span></a></td>
+                <td><code class="account-code">${a.id}</code></td>
+                <td><code class="account-code account-pw" data-pw="${a.pw}">••••••••</code></td>
+            </tr>`;
+        });
+    }
+    html += '</tbody>';
+    const table = document.getElementById('accountsTable');
+    table.innerHTML = html;
+    // 비밀번호 클릭 시 토글로 보이기
+    table.querySelectorAll('.account-pw').forEach(el => {
+        el.style.cursor = 'pointer';
+        el.title = '클릭하면 비밀번호 보기/숨기기';
+        let shown = false;
+        el.addEventListener('click', () => {
+            shown = !shown;
+            el.textContent = shown ? el.dataset.pw : '••••••••';
+        });
+    });
 }
 
 /* ============ Init ============ */

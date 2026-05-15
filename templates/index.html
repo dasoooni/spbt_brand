@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SPBT 운영 관리 · 멀티 브랜드 대시보드</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260515e" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260515f" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -35,11 +35,6 @@
             <div class="sidebar-title" style="margin-top:14px;">브랜드</div>
             <ul class="brand-list" id="brandList"></ul>
 
-            <div class="sidebar-foot">
-                <div class="scope-label">현재 보기</div>
-                <div class="scope-value" id="scopeValue">전체 보기</div>
-                <div class="scope-sub" id="scopeSub">6개 브랜드 · 기준월 26.04</div>
-            </div>
         </aside>
 
         <main class="main">
@@ -149,6 +144,40 @@
                     </div>
                 </div>
 
+                <div class="chart-grid grid-2-2">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <h3>본사 손익 현황</h3>
+                                <span class="chart-sub" id="hqPlSub">기준 26.04 · 전월 대비 · 단위 원</span>
+                            </div>
+                        </div>
+                        <div class="hq-pl-wrap" id="hqPlWrap"></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <h3>가용 예산</h3>
+                                <span class="chart-sub">투자금 · 지원금 · 대출 · 영업이익</span>
+                            </div>
+                            <div class="issues-stats" id="budgetTotal"></div>
+                        </div>
+                        <div class="chart-body chart-body-tall"><canvas id="budgetChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="issues-card">
+                    <div class="issues-header">
+                        <div>
+                            <h3>매출·물류 사이트 계정</h3>
+                            <span class="chart-sub">홈페이지·플랫폼 로그인 정보</span>
+                        </div>
+                    </div>
+                    <div class="issues-table-wrap">
+                        <table class="issues-table" id="accountsTable"></table>
+                    </div>
+                </div>
+
                 <div class="issues-card">
                     <div class="issues-header">
                         <div>
@@ -192,6 +221,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260515e"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260515f"></script>
 </body>
 </html>

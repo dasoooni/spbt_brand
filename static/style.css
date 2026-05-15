@@ -793,6 +793,105 @@ button { font-family: inherit; cursor: pointer; }
     font-weight: 600;
 }
 
+/* =============== 본사 손익 (가로 막대 비교) =============== */
+.hq-pl-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 4px;
+}
+.hq-pl-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 14px;
+    align-items: center;
+}
+.hq-pl-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+.hq-pl-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hq-pl-bar-row {
+    display: grid;
+    grid-template-columns: 42px 1fr 92px;
+    gap: 10px;
+    align-items: center;
+    font-size: 11.5px;
+}
+.hq-pl-bar-period {
+    color: var(--text-soft);
+    font-weight: 500;
+}
+.hq-pl-bar {
+    height: 14px;
+    background: var(--border-soft);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.hq-pl-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+.hq-pl-bar-fill.prev_prev { background: #D1D5DB; }
+.hq-pl-bar-fill.prev      { background: var(--primary); }
+.hq-pl-bar-fill.prev.negative { background: var(--danger); }
+.hq-pl-bar-value {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.hq-pl-bar-value.positive { color: var(--success); }
+.hq-pl-bar-value.negative { color: var(--danger); }
+.hq-pl-change {
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+.hq-pl-change.up   { color: var(--success); }
+.hq-pl-change.down { color: var(--danger); }
+
+/* 프로젝트 외부 링크 */
+.project-link {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--border);
+    transition: color 0.15s ease;
+}
+.project-link:hover {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.project-link .link-icon {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 3px;
+}
+.project-link:hover .link-icon { color: var(--primary); }
+
+/* 계정 코드 표시 (ID/비밀번호) */
+.account-code {
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 12.5px;
+    background: var(--bg);
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: var(--text);
+    user-select: all;
+}
+.account-pw {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.account-pw:hover { background: var(--primary-soft); color: var(--primary-text); }
+
 /* Progress bar */
 .progress-cell { min-width: 140px; }
 .progress-bar {
