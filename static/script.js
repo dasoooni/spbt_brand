@@ -658,7 +658,7 @@ function renderStoresMonthly(d) {
     const declined = stores.filter(s => s.prev < s.prev_prev).length;
     const grown = stores.filter(s => s.prev > s.prev_prev).length;
     document.getElementById('storesMonthlySub').textContent =
-        `기준 ${meta.prev_month} · 전전월(${meta.prev_prev_month}) 대비 · 단위 만원`;
+        `기준 ${meta.prev_month} · 전월 대비`;
 
     const statsEl = document.getElementById('storesMonthlyStats');
     if (statsEl) {
