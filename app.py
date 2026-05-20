@@ -1,41 +1,12 @@
 import os
 import random
-from functools import wraps
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 # 개발 중 정적 파일(CSS/JS) 캐시 비활성화 — 브라우저가 항상 최신 파일을 받도록
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-
-# ============ HTTP Basic 인증 ============
-# 환경변수 PASSWORD 또는 DASHBOARD_PASSWORD 가 설정되면 인증 활성화
-# 사용자명은 검증하지 않음 (아무거나 입력해도 OK) → 비밀번호만 일치하면 통과
-# 로컬 개발: 환경변수 없으면 비밀번호 없이 접속 (편의)
-DASHBOARD_PASSWORD = (
-    os.environ.get("DASHBOARD_PASSWORD")
-    or os.environ.get("PASSWORD")
-    or os.environ.get("spbt")
-)
-
-
-def _authenticate():
-    return Response(
-        "SPBT 대시보드 접속 인증이 필요합니다.",
-        401,
-        {"WWW-Authenticate": 'Basic realm="SPBT Dashboard"'},
-    )
-
-
-@app.before_request
-def _require_auth():
-    # 환경변수 미설정 → 인증 비활성 (로컬 개발용)
-    if not DASHBOARD_PASSWORD:
-        return None
-    auth = request.authorization
-    # 사용자명은 무시, 비밀번호만 검증
-    if not auth or auth.password != DASHBOARD_PASSWORD:
-        return _authenticate()
+# 인증 제거: URL만 알면 누구나 접속 가능 (내부 공유용)
 
 MONTH_LABELS = ["25.11", "25.12", "26.01", "26.02", "26.03", "26.04"]
 
